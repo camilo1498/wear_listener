@@ -8,4 +8,5 @@
     <string name="msgBtn">Send message</string>
     <string name="msgTxt">Hello workd</string>
     <string name="qr_code">qr_code</string>
+    <string name="timer">0</string>
 </resources>

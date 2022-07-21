@@ -43,5 +43,9 @@ dependencies {
 
     implementation "androidx.wear:wear-remote-interactions:1.0.0"
 
-    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.zxing:core:3.4.1'
+    implementation 'com.github.douglasspgyn:CircularCountdown:0.3.0'
+
+    implementation "androidx.wear.compose:compose-material:1.1.0-alpha01"
+    implementation "androidx.wear.compose:compose-navigation:1.1.0-alpha01"
 }
