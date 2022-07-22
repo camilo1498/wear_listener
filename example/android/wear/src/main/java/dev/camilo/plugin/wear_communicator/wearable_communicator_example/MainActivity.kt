@@ -119,6 +119,7 @@ class MainActivity : ComponentActivity(),
     }
 
     private fun sendRequest() {
+
         val messageClient = Wearable.getMessageClient(this@MainActivity)
         Wearable.getNodeClient(this@MainActivity).connectedNodes.addOnSuccessListener { nodes ->
             nodes.forEach {
