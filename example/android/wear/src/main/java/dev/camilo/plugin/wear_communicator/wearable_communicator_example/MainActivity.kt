@@ -41,13 +41,15 @@ class MainActivity : ComponentActivity(),
         }
 
         override fun onFinish() {
-            this.start()
             sendRequest()
+            this.start()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        qrCode = getQrCodeBitmap("start")
+        Log.d("Wear", "here")
         counter.start()
         sendRequest()
         setContent {
@@ -65,7 +67,7 @@ class MainActivity : ComponentActivity(),
                         contentAlignment = Alignment.Center,
                     ){
                         Image(
-                            bitmap = getQrCodeBitmap("sadsdsd").asImageBitmap(),
+                            bitmap = qrCode.asImageBitmap(),
                             contentDescription = "qr code",
                             alignment = Alignment.Center,
                             modifier = Modifier
@@ -105,21 +107,7 @@ class MainActivity : ComponentActivity(),
 
     @SuppressLint("Range")
     private fun getQrCodeBitmap(token: String): Bitmap {
-
-
-//        val size = 512 //pixels
-//        val hints = hashMapOf<EncodeHintType, Int>().also {
-//            it[EncodeHintType.MARGIN] = 0
-//        } // Make the QR code buffer border narrower
-//        val bits = QRCodeWriter().encode(token, BarcodeFormat.QR_CODE, size, size, hints)
-//        return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also {
-//            for (x in 0 until size) {
-//                for (y in 0 until size) {
-//                    it.setPixel(x, y, if (bits[x, y]) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
-//                }
-//            }
-//        }
-        val data = QrData.Url("Manco")
+        val data = QrData.Url(token)
 
         val options = QrOptions.Builder(1024)
                 .setPadding(.0f)
@@ -170,8 +158,8 @@ class MainActivity : ComponentActivity(),
             return (kotlin.math.sqrt((center - i) * (center - i) + (center - j) * (center - j)) < center)
         }
     }
-    private fun sendRequest() {
 
+    private fun sendRequest() {
         val messageClient = Wearable.getMessageClient(this@MainActivity)
         Wearable.getNodeClient(this@MainActivity).connectedNodes.addOnSuccessListener { nodes ->
             nodes.forEach {
