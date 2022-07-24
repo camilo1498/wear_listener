@@ -1,5 +1,6 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.widgets.ProgressIndicatorWidget
 import android.os.Bundle
@@ -14,15 +15,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Text
+import androidx.core.content.ContextCompat
+import com.github.alexzhirkevich.customqrgenerator.QrCodeGenerator
+import com.github.alexzhirkevich.customqrgenerator.QrData
+import com.github.alexzhirkevich.customqrgenerator.QrGenerator
+import com.github.alexzhirkevich.customqrgenerator.QrOptions
+import com.github.alexzhirkevich.customqrgenerator.style.*
 import com.google.android.gms.wearable.*
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
+import java.lang.Math.sqrt
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity(),
@@ -101,23 +103,73 @@ class MainActivity : ComponentActivity(),
         counter.cancel()
     }
 
+    @SuppressLint("Range")
     private fun getQrCodeBitmap(token: String): Bitmap {
 
 
-        val size = 512 //pixels
-        val hints = hashMapOf<EncodeHintType, Int>().also {
-            it[EncodeHintType.MARGIN] = 0
-        } // Make the QR code buffer border narrower
-        val bits = QRCodeWriter().encode(token, BarcodeFormat.QR_CODE, size, size, hints)
-        return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also {
-            for (x in 0 until size) {
-                for (y in 0 until size) {
-                    it.setPixel(x, y, if (bits[x, y]) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
-                }
-            }
+//        val size = 512 //pixels
+//        val hints = hashMapOf<EncodeHintType, Int>().also {
+//            it[EncodeHintType.MARGIN] = 0
+//        } // Make the QR code buffer border narrower
+//        val bits = QRCodeWriter().encode(token, BarcodeFormat.QR_CODE, size, size, hints)
+//        return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).also {
+//            for (x in 0 until size) {
+//                for (y in 0 until size) {
+//                    it.setPixel(x, y, if (bits[x, y]) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
+//                }
+//            }
+//        }
+        val data = QrData.Url("Manco")
+
+        val options = QrOptions.Builder(1024)
+                .setPadding(.0f)
+                .setColors(
+                        QrColors(
+                                dark = QrColor
+                                        .Solid(android.graphics.Color.parseColor("#000000")),
+                                bitmapBackground = QrColor.Solid(android.graphics.Color.WHITE),
+                                codeBackground = QrColor
+                                        .Solid(android.graphics.Color.WHITE),
+                        )
+                )
+                .setLogo(
+                        QrLogo(
+                                drawable = ContextCompat
+                                        .getDrawable(this, R.drawable.logo_bt_b)!!,
+                                size = .5f,
+                                padding = .1f,
+                                shape = QrLogoShape
+                                        .Circle,
+
+                        )
+                )
+                .setElementsShapes(
+                        QrElementsShapes(
+                                darkPixel = Circle,
+                                ball = QrBallShape
+                                        .RoundCorners(.5f),
+                                frame = QrFrameShape
+                                        .RoundCorners(.5f),
+                                background = QrBackgroundShape
+                                        .RoundCorners(.5f),
+                                lightPixel = QrPixelShape.RoundCorners(),
+                        )
+                )
+                .setCodeShape(QrShape.Circle())
+                .build()
+        val generator: QrCodeGenerator = QrGenerator()
+
+        return generator.generateQrCode(data, options)
+    }
+    object Circle : QrPixelShape {
+        override fun invoke(
+                i: Int, j: Int, elementSize: Int,
+                qrPixelSize: Int, neighbors: Neighbors
+        ): Boolean {
+            val center = elementSize/2.0
+            return (kotlin.math.sqrt((center - i) * (center - i) + (center - j) * (center - j)) < center)
         }
     }
-
     private fun sendRequest() {
 
         val messageClient = Wearable.getMessageClient(this@MainActivity)
