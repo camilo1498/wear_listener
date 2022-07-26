@@ -24,7 +24,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "wearableCommunicator")
-    channel.setMethodCallHandler(this);
+    channel.setMethodCallHandler(this)
   }
 
   companion object {

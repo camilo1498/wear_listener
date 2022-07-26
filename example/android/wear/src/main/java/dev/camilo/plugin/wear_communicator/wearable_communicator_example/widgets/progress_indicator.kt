@@ -60,7 +60,7 @@ fun ProgressIndicatorWidget(
                     .wrapContentSize(Alignment.Center)
             ) {
                 Text(
-                    text = textValue.toInt().toString(),//textValue.toInt().toString(),
+                    text = textValue.toInt().toString(),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
@@ -72,7 +72,7 @@ fun ProgressIndicatorWidget(
 
     /** show Qr code **/
     Box(  modifier = Modifier
-        .size(160.dp)
+        .size(170.dp)
         .clip(shape = CircleShape),
         contentAlignment = Alignment.Center,
     ){

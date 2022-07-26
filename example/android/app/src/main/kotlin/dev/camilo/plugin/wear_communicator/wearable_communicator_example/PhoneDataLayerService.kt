@@ -1,12 +1,10 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
-import android.content.SharedPreferences
 import android.util.Log
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
-import kotlin.random.Random
 
 class PhoneDataLayerService: WearableListenerService() {
 
