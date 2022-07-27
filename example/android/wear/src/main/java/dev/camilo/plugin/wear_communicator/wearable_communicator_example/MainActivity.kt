@@ -2,10 +2,14 @@ package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.widgets.ProgressIndicatorWidget
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.util.Base64
 import android.util.Log
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -17,63 +21,86 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenStarted
 import com.github.alexzhirkevich.customqrgenerator.QrCodeGenerator
 import com.github.alexzhirkevich.customqrgenerator.QrData
 import com.github.alexzhirkevich.customqrgenerator.QrGenerator
 import com.github.alexzhirkevich.customqrgenerator.QrOptions
 import com.github.alexzhirkevich.customqrgenerator.style.*
 import com.google.android.gms.wearable.*
+import dev.camilo.plugin.wear_communicator.wearable_communicator_example.functions.GenerateQrCode
+import kotlinx.coroutines.*
 import java.lang.Math.sqrt
+import java.util.*
+import java.util.concurrent.ForkJoinPool
+import kotlin.concurrent.schedule
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity(),
-    DataClient.OnDataChangedListener,
-    MessageClient.OnMessageReceivedListener {
+        DataClient.OnDataChangedListener,
+        MessageClient.OnMessageReceivedListener {
 
     var value = mutableStateOf(0f)
-    private lateinit var qrCode: Bitmap
+    private var qrCode = mutableStateOf<Bitmap?>(null)
 
-    private val counter = object : CountDownTimer(13000, 1000) {
+    private val counter = object : CountDownTimer(12000, 1000) {
 
         override fun onTick(millisUntilFinished: Long) {
             value.value = (millisUntilFinished / 1000).toFloat()
         }
 
         override fun onFinish() {
-            sendRequest()
-            this.start()
+            GenerateQrCode().sendRequest(this@MainActivity)
+            Handler().postDelayed({
+                this.start()
+            }, 1000)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        qrCode = getQrCodeBitmap("start")
-        Log.d("Wear", "here")
-        counter.start()
-        sendRequest()
+        GenerateQrCode().sendRequest(this@MainActivity)
+        setTheme(android.R.style.Theme_DeviceDefault)
+        Timer().schedule(object : TimerTask() {
+            override fun run() {
+                counter.start()
+            }
+        }, 1000)
         setContent {
             Box(modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White),
-                contentAlignment = Alignment.Center){
+                    .fillMaxSize()
+                    .background(Color.White),
+                    contentAlignment = Alignment.Center){
                 ProgressIndicatorWidget(
-                    textValue = value.value
+                        textValue = value.value
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black),
-                        contentAlignment = Alignment.Center,
-                    ){
-                        Image(
-                            bitmap = qrCode.asImageBitmap(),
-                            contentDescription = "qr code",
-                            alignment = Alignment.Center,
                             modifier = Modifier
-                                .height(200.dp)
-                                .width(200.dp),
-                        )
+                                    .fillMaxSize().wrapContentSize(Alignment.Center),
+                            contentAlignment = Alignment.Center,
+                    ){
+                        if(qrCode.value != null)
+                            Image(
+                                    bitmap = qrCode.value!!.asImageBitmap(),
+                                    contentDescription = "qr code",
+                                    alignment = Alignment.Center,
+                                    modifier = Modifier
+                                            .height(300.dp)
+                                            .width(300.dp),
+                            )
+                        /*AndroidView(
+                                modifier = Modifier.fillMaxSize(),
+                                factory = {
+                                    ImageView.inflate(it, R.layout.activity_main)
+                                },
+                                update = {
+                                    val imageView = it.findViewById<ImageView>(R.id.qrImage)
+                                    imageView.setImageBitmap(qrCode.value!!)
+                                }
+                        )*/
                     }
                 }
             }
@@ -83,94 +110,26 @@ class MainActivity : ComponentActivity(),
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
             if (event.type == DataEvent.TYPE_CHANGED) {
-                Log.d("Wear", event.toString())
             }
         }
     }
 
     override fun onMessageReceived(message: MessageEvent) {
-        Log.d("Weaar", String(message.data))
         try {
-            qrCode = getQrCodeBitmap(message.data.decodeToString())
-            Log.d("decode token", (qrCode.toString()))
+            val imageByte = Base64.decode(message.data, 0)
+            qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
         } catch (e: Exception) {
-            //this method is called for exception handling.
-            Log.e("Tag", e.toString())
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.e("Termianted", "app was closed")
         counter.cancel()
     }
 
-    @SuppressLint("Range")
-    private fun getQrCodeBitmap(token: String): Bitmap {
-        val data = QrData.Url(token)
-
-        val options = QrOptions.Builder(1024)
-                .setPadding(.0f)
-                .setColors(
-                        QrColors(
-                                dark = QrColor
-                                        .Solid(android.graphics.Color.parseColor("#000000")),
-                                bitmapBackground = QrColor.Solid(android.graphics.Color.WHITE),
-                                codeBackground = QrColor
-                                        .Solid(android.graphics.Color.WHITE),
-                        )
-                )
-                .setLogo(
-                        QrLogo(
-                                drawable = ContextCompat
-                                        .getDrawable(this, R.drawable.logo_bt_b)!!,
-                                size = .5f,
-                                padding = .1f,
-                                shape = QrLogoShape
-                                        .Circle,
-
-                        )
-                )
-                .setElementsShapes(
-                        QrElementsShapes(
-                                darkPixel = Circle,
-                                ball = QrBallShape
-                                        .RoundCorners(.5f),
-                                frame = QrFrameShape
-                                        .RoundCorners(.5f),
-                                background = QrBackgroundShape
-                                        .RoundCorners(.5f),
-                                lightPixel = QrPixelShape.RoundCorners(),
-                        )
-                )
-                .setCodeShape(QrShape.Circle())
-                .build()
-        val generator: QrCodeGenerator = QrGenerator()
-
-        return generator.generateQrCode(data, options)
-    }
-    object Circle : QrPixelShape {
-        override fun invoke(
-                i: Int, j: Int, elementSize: Int,
-                qrPixelSize: Int, neighbors: Neighbors
-        ): Boolean {
-            val center = elementSize/2.0
-            return (kotlin.math.sqrt((center - i) * (center - i) + (center - j) * (center - j)) < center)
-        }
-    }
-
-    private fun sendRequest() {
-        val messageClient = Wearable.getMessageClient(this@MainActivity)
-        Wearable.getNodeClient(this@MainActivity).connectedNodes.addOnSuccessListener { nodes ->
-            nodes.forEach {
-                messageClient.sendMessage(
-                    it.id,
-                    "/token",
-                    Random(34535345).toString().toByteArray()
-                ).addOnSuccessListener {
-                    Log.d("Wear", "Sent message to phone")
-                }
-            }
-        }
+    override fun onResume() {
+        super.onResume()
+        Wearable.getMessageClient(this).addListener(this)
+        Wearable.getDataClient(this).addListener(this)
     }
 }

@@ -1,6 +1,7 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example.widgets
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -61,7 +62,7 @@ fun ProgressIndicatorWidget(
             ) {
                 Text(
                     text = textValue.toInt().toString(),//textValue.toInt().toString(),
-                    fontSize = 15.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     textAlign = TextAlign.Center
@@ -70,9 +71,10 @@ fun ProgressIndicatorWidget(
         }
     }
 
-    /** show Qr code **/
+    /** show Qr  code **/
     Box(  modifier = Modifier
-        .size(160.dp)
+        .size(185.dp)
+            .wrapContentSize(Alignment.Center)
         .clip(shape = CircleShape),
         contentAlignment = Alignment.Center,
     ){
@@ -124,6 +126,7 @@ fun CircularProgressbar(
             }else {
                 298f
             }
+
             // Foreground circle
             drawArc(
                 color = Color(0xFFE7662B) ,

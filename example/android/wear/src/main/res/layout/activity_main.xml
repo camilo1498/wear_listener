@@ -24,25 +24,11 @@
 
             <ImageView
                 android:id="@+id/qrImage"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
 
                 android:contentDescription="@string/qr_code" />
 
-            <TextView
-                android:id="@+id/timer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/timer"
-                android:layout_gravity="center" />
-
-
-            <Button
-                android:id="@+id/messageBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/msgBtn" />
 
         </LinearLayout>
 

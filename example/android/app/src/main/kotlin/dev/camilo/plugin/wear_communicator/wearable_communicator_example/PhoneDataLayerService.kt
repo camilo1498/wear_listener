@@ -1,12 +1,9 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
-import android.content.SharedPreferences
-import android.util.Log
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.Wearable
-import com.google.android.gms.wearable.WearableListenerService
-import kotlin.random.Random
+import android.graphics.Bitmap
+import android.util.Base64
+import com.google.android.gms.wearable.*
+import java.io.ByteArrayOutputStream
 
 class PhoneDataLayerService: WearableListenerService() {
 
@@ -21,13 +18,21 @@ class PhoneDataLayerService: WearableListenerService() {
         val mPrefs = getSharedPreferences("FlutterSharedPreferences", 0)
         when (messageEvent.path) {
             SEND_TOKEN -> {
-                messageClient.sendMessage(messageEvent.sourceNodeId, SEND_TOKEN,
-                    mPrefs.getString("flutter." + "wear", "").toString().toByteArray())
+                val qrCode = GenerateQrCode().getQrCodeBitmap(mPrefs.getString("flutter." + "wear", "").toString(), this)
+                val bitmap = bitMapToString(qrCode!!)
 
-                Log.d("Background", "Message from ${messageEvent.sourceNodeId}")
-                Log.d("sharedPreferences","${mPrefs.getString("flutter." + "wear", "")}")
+                messageClient.sendMessage(messageEvent.sourceNodeId, SEND_TOKEN,
+                    bitmap.toByteArray())
+
             }
         }
+    }
+
+    private fun bitMapToString(bitmap: Bitmap): String {
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
+        val b = baos.toByteArray()
+        return Base64.encodeToString(b, Base64.DEFAULT)
     }
 
     companion object {
