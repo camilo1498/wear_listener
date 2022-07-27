@@ -58,21 +58,4 @@ class GenerateQrCode {
         return generator.generateQrCode(data, options)
 
     }
-
-
-
-    fun sendRequest(activity: MainActivity) {
-        val messageClient = Wearable.getMessageClient(activity)
-        Wearable.getNodeClient(activity).connectedNodes.addOnSuccessListener { nodes ->
-            nodes.forEach {
-                messageClient.sendMessage(
-                        it.id,
-                        "/token",
-                        Random(34535345).toString().toByteArray()
-                ).addOnSuccessListener {
-                    Log.d("Wear", "Sent message to phone")
-                }
-            }
-        }
-    }
 }

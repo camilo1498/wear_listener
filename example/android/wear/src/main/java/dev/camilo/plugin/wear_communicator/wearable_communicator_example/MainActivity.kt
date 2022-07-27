@@ -1,3 +1,5 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
 import android.graphics.Bitmap
@@ -21,6 +23,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.wearable.*
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.functions.GenerateQrCode
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.*
 class MainActivity : ComponentActivity(),
         DataClient.OnDataChangedListener,
@@ -92,7 +98,9 @@ class MainActivity : ComponentActivity(),
             val imageByte = Base64.decode(message.data, 0)
 
             /** set QR to bitmap **/
-            qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
+            GlobalScope.launch(Dispatchers.Main) {
+                qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
+            }
         } catch (e: Exception) {
         }
     }
