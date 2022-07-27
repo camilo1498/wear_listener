@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream
 
 class PhoneDataLayerService: WearableListenerService() {
 
+    /** instance of wearable message client **/
     private val messageClient by lazy { Wearable.getMessageClient(this) }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -15,28 +16,34 @@ class PhoneDataLayerService: WearableListenerService() {
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
+        /** instance of shared preferences **/
         val mPrefs = getSharedPreferences("FlutterSharedPreferences", 0)
+
+        /** received message path **/
         when (messageEvent.path) {
-            SEND_TOKEN -> {
-                val qrCode = GenerateQrCode().getQrCodeBitmap(mPrefs.getString("flutter." + "wear", "").toString(), this)
+            "/token" -> {
+                /** Get user token from local storage **/
+                val token = mPrefs.getString("flutter." + "wear", "")
+
+                /** Generate QR Code token **/
+                val qrCode = GenerateQrCode().getQrCodeBitmap(token.toString(), this)
+
+                /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)
 
-                messageClient.sendMessage(messageEvent.sourceNodeId, SEND_TOKEN,
+                /** send string qrcode to wear device **/
+                messageClient.sendMessage(messageEvent.sourceNodeId, "/token",
                     bitmap.toByteArray())
 
             }
         }
     }
 
+    /** convert bitmap to string base64 **/
     private fun bitMapToString(bitmap: Bitmap): String {
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
-        val b = baos.toByteArray()
-        return Base64.encodeToString(b, Base64.DEFAULT)
+        val arrayOutput = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, arrayOutput)
+        val image = arrayOutput.toByteArray()
+        return Base64.encodeToString(image, Base64.DEFAULT)
     }
-
-    companion object {
-        private const val SEND_TOKEN = "/token"
-    }
-
 }

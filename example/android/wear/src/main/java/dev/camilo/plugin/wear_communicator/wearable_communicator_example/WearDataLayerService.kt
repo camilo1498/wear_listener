@@ -9,12 +9,12 @@ class WearDataLayerService: WearableListenerService() {
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         super.onDataChanged(dataEvents)
-        //Log.d("wear data change", dataEvents.toString())
+        Log.d("wear data change", dataEvents.toString())
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
-        //Log.d("wear data layer", messageEvent.data.toString())
+        Log.d("wear data layer", messageEvent.data.toString())
     }
 
 }

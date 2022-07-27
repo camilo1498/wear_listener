@@ -7,10 +7,14 @@ import kotlin.random.Random
 
 class GenerateQrCode {
 
+    /** send request to phone **/
     fun sendRequest(activity: MainActivity) {
+        /** instance of Wearable message client **/
         val messageClient = Wearable.getMessageClient(activity)
+        /** get connected nodes (devices) **/
         Wearable.getNodeClient(activity).connectedNodes.addOnSuccessListener { nodes ->
             nodes.forEach {
+                /** send request by path **/
                 messageClient.sendMessage(
                         it.id,
                         "/token",

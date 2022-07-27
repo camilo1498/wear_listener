@@ -1,12 +1,8 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example.widgets
 
-import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
@@ -14,9 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
@@ -27,23 +21,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Text
 
+/** progress indicator **/
 @Composable
 fun ProgressIndicatorWidget(
     modifier: Modifier = Modifier,
     textValue: Float,
-    content: @Composable () -> Unit
-)  {
+    content: @Composable () -> Unit)  {
+
+    /** variables **/
     var size by remember {
         mutableStateOf(IntSize.Zero)
     }
 
+    /** main container **/
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier
-            .onSizeChanged {
-                size = it
-            }
-    ) {
+        modifier = modifier.onSizeChanged { size = it }) {
         /** show progress indicator **/
         CircularProgressbar(
             number = textValue * 10
@@ -60,8 +53,9 @@ fun ProgressIndicatorWidget(
                     .fillMaxWidth()
                     .wrapContentSize(Alignment.Center)
             ) {
+                /** show countdown progress text **/
                 Text(
-                    text = textValue.toInt().toString(),//textValue.toInt().toString(),
+                    text = textValue.toInt().toString(),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
@@ -71,13 +65,14 @@ fun ProgressIndicatorWidget(
         }
     }
 
-    /** show Qr  code **/
+    /** Qr container **/
     Box(  modifier = Modifier
         .size(185.dp)
             .wrapContentSize(Alignment.Center)
         .clip(shape = CircleShape),
         contentAlignment = Alignment.Center,
     ){
+        /** show qr code **/
         content()
     }
 }
@@ -92,7 +87,7 @@ fun CircularProgressbar(
 ) {
 
 
-    // Number Animation
+    /** animation progress **/
     val animateNumber = animateFloatAsState(
         targetValue = number,
         animationSpec = tween(
@@ -101,18 +96,17 @@ fun CircularProgressbar(
         )
     )
 
-    // This is to start the animation when the activity is opened
+    /** main container **/
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(size = size)
-    ) {
+            .size(size = size)) {
         Canvas(
             modifier = Modifier
                 .size(size = size)
         ) {
 
-            // Background circle
+            /** progress bar background **/
             drawArc(
                 color = Color.Black,
                 startAngle = 300f,
@@ -121,13 +115,14 @@ fun CircularProgressbar(
                 style = Stroke(indicatorThickness.toPx(), cap = StrokeCap.Round)
             )
 
+            /** progress value **/
             val sweepAngle = if((animateNumber.value / 100) * 247 in 0.0..298.0) {
                 (animateNumber.value / 100) * 247
             }else {
                 298f
             }
 
-            // Foreground circle
+            /** progress bar **/
             drawArc(
                 color = Color(0xFFE7662B) ,
                 startAngle = 300f,
