@@ -115,16 +115,16 @@ class MainActivity : ComponentActivity(),
 
         override fun onTick(millisUntilFinished: Long) {
             /** update count value **/
-            value.value = (millisUntilFinished / 1500).toFloat()
+            value.value = (millisUntilFinished / 1000).toFloat()
         }
 
         @Suppress("DEPRECATION")
         override fun onFinish() {
             GenerateQrCode().sendRequest(this@MainActivity)
+            value.value = 12f
             Handler().postDelayed({
-                value.value = 12f
                 this.start()
-            }, 1500)
+            }, 1000)
         }
     }
 }
