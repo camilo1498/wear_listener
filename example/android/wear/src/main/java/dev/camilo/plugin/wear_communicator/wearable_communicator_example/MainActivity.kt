@@ -27,19 +27,21 @@ class MainActivity : ComponentActivity(),
         MessageClient.OnMessageReceivedListener {
 
     /** mutable variables **/
-    var value = mutableStateOf(0f)
+    var value = mutableStateOf(12f)
     private var qrCode = mutableStateOf<Bitmap?>(null)
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        /** generate qr code **/
         GenerateQrCode().sendRequest(this@MainActivity)
+        /** set default app theme **/
         setTheme(android.R.style.Theme_DeviceDefault)
+        /** initialize countdown**/
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 counter.start()
             }
-        }, 1000)
+        }, 1500)
 
         /** render main layout **/
         setContent {
@@ -120,6 +122,7 @@ class MainActivity : ComponentActivity(),
         override fun onFinish() {
             GenerateQrCode().sendRequest(this@MainActivity)
             Handler().postDelayed({
+                value.value = 12f
                 this.start()
             }, 1500)
         }
