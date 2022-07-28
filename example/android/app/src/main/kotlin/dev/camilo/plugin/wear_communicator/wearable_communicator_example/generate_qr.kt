@@ -4,15 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.util.Log
-import androidx.core.content.ContextCompat
 import com.github.alexzhirkevich.customqrgenerator.QrCodeGenerator
 import com.github.alexzhirkevich.customqrgenerator.QrData
 import com.github.alexzhirkevich.customqrgenerator.QrGenerator
 import com.github.alexzhirkevich.customqrgenerator.QrOptions
 import com.github.alexzhirkevich.customqrgenerator.style.*
-import com.google.android.gms.wearable.Wearable
-import kotlin.random.Random
 
 class GenerateQrCode {
 
@@ -20,7 +16,7 @@ class GenerateQrCode {
     fun getQrCodeBitmap(token: String, context: Context): Bitmap? {
         val data = QrData.Url(token)
         val generator: QrCodeGenerator = QrGenerator()
-        val options = QrOptions.Builder(750)
+        val options = QrOptions.Builder(600)
                 .setPadding(.0f)
                 .setColors(
                         QrColors(
@@ -30,17 +26,7 @@ class GenerateQrCode {
                                         .Solid(Color.TRANSPARENT),
                         )
                 )
-                .setLogo(
-                        QrLogo(
-                                drawable = ContextCompat
-                                        .getDrawable(context, R.drawable.logo_bt_b)!!,
-                                size = .3f,
-                                padding = .1f,
-                                shape = QrLogoShape
-                                        .Circle,
 
-                                )
-                )
                 .setElementsShapes(
                         QrElementsShapes(
                                 darkPixel = QrPixelShape.Circle(),

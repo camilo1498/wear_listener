@@ -23,10 +23,14 @@ class PhoneDataLayerService: WearableListenerService() {
         when (messageEvent.path) {
             "/token" -> {
                 /** Get user token from local storage **/
-                val token = mPrefs.getString("flutter." + "wear", "")
+                val token = if(mPrefs.getString("flutter." + "wear", "").toString().isNotEmpty()){
+                    mPrefs.getString("flutter." + "wear", "").toString()
+                } else{
+                    "contact with support"
+                }
 
                 /** Generate QR Code token **/
-                val qrCode = GenerateQrCode().getQrCodeBitmap(token.toString(), this)
+                val qrCode = GenerateQrCode().getQrCodeBitmap("0x01000000469A4DA9932B403EE35BA88CF41DF69152447E35E97282F28EC33B879393EC3E715C8C983A0E96275FD6C3D90366F1D5630EBD9EB1C786CAC718185957FFB3C89D878681608CA038196FA1BFAB3B27944D42D75C3429293C", this)
 
                 /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)
