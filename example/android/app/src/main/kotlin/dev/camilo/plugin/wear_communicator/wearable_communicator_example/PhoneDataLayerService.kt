@@ -2,10 +2,11 @@ package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
 import android.graphics.Bitmap
 import android.util.Base64
+import android.util.Log
 import com.google.android.gms.wearable.*
 import java.io.ByteArrayOutputStream
 
-class PhoneDataLayerService: WearableListenerService() {
+class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapabilityChangedListener {
 
     /** instance of wearable message client **/
     private val messageClient by lazy { Wearable.getMessageClient(this) }
@@ -30,7 +31,7 @@ class PhoneDataLayerService: WearableListenerService() {
                 }
 
                 /** Generate QR Code token **/
-                val qrCode = GenerateQrCode().getQrCodeBitmap("0x01000000469A4DA9932B403EE35BA88CF41DF69152447E35E97282F28EC33B879393EC3E715C8C983A0E96275FD6C3D90366F1D5630EBD9EB1C786CAC718185957FFB3C89D878681608CA038196FA1BFAB3B27944D42D75C3429293C", this)
+                val qrCode = GenerateQrCode().getQrCodeBitmap(token, this)
 
                 /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)
@@ -46,8 +47,13 @@ class PhoneDataLayerService: WearableListenerService() {
     /** convert bitmap to string base64 **/
     private fun bitMapToString(bitmap: Bitmap): String {
         val arrayOutput = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, arrayOutput)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 30, arrayOutput)
         val image = arrayOutput.toByteArray()
         return Base64.encodeToString(image, Base64.DEFAULT)
     }
+
+    override fun onCapabilityChanged(devices: CapabilityInfo) {
+        super.onCapabilityChanged(devices)
+    }
+
 }

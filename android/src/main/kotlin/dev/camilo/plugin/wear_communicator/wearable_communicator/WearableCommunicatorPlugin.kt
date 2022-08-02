@@ -1,6 +1,7 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator
 
 import android.app.Activity
+import androidx.annotation.MainThread
 import androidx.annotation.NonNull
 import com.google.android.gms.wearable.*
 import io.flutter.Log
@@ -14,13 +15,17 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import org.json.JSONObject
 
-class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, MessageClient.OnMessageReceivedListener, DataClient.OnDataChangedListener, CapabilityClient.OnCapabilityChangedListener, WearableListenerService() {
+class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
+  ActivityAware, MessageClient.OnMessageReceivedListener,
+  DataClient.OnDataChangedListener, CapabilityClient.OnCapabilityChangedListener,
+  WearableListenerService() {
 
   private lateinit var channel : MethodChannel
 
   private var activity: Activity? = null
   private val messageListenerIds = mutableListOf<Int>()
   private val dataListenerIds = mutableListOf<Int>()
+  private val pairedDevicesListenerIds = mutableListOf<Int>()
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "wearableCommunicator")
@@ -52,6 +57,10 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
       "listenData" -> {
         registerDataLayerListener(call)
       }
+      "listenDevices" -> {
+        registerPairedDevicesListener(call)
+        result.success(null)
+      }
       else -> {
         result.notImplemented()
       }
@@ -63,6 +72,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
     try {
       val id = call.arguments<Int>()
       messageListenerIds.add(id!!)
+      Log.e(TAG, "Initialized message listener ${messageListenerIds.size}")
     } catch (ex: Exception) {
       Log.e(TAG, ex.localizedMessage!!, ex)
     }
@@ -78,28 +88,41 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
     }
   }
 
+  private fun registerPairedDevicesListener(call: MethodCall) {
+    try {
+      val id = call.arguments<Int>()
+      pairedDevicesListenerIds.add(id!!)
+      Log.e(TAG, "Initialized paired devices ${pairedDevicesListenerIds.size}")
+    } catch (ex: Exception) {
+      Log.e(TAG, ex.localizedMessage!!, ex)
+    }
+  }
+
   /// get wear node
   private fun getWearableNode(result: Result) {
     try {
       Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
         if(nodes.isNotEmpty()){
-          nodes.forEach { node ->
-            Log.d(TAG,"node: name => $node")
-            result.success(hashMapOf(
-              "id" to node.id,
-              "name" to node.displayName,
-              "connected" to true
+
+          val device = mutableListOf<Map<String, String>>()
+          nodes.forEach{ node ->
+            device.add(mapOf(
+              "id" to node.id.toString(),
+              "name" to node.displayName.toString(),
+              "connected" to node.isNearby.toString()
             ))
-
-
           }
+          result.success(device)
+
         } else{
           Log.d(TAG, "disconnected")
-          result.success(hashMapOf(
-            "id" to null,
-            "name" to null,
+          result.success(
+            mutableListOf(hashMapOf(
+            "id" to "no data",
+            "name" to "no data",
             "connected" to false
           ))
+          )
         }
 
 
@@ -217,11 +240,13 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   private fun startWearableClients(a: Activity) {
     Wearable.getMessageClient(a).addListener(this)
     Wearable.getDataClient(a).addListener(this)
+    Wearable.getCapabilityClient(a).addListener(this,"")
   }
 
   private fun detachWearableClients(a: Activity) {
     Wearable.getMessageClient(a).removeListener(this)
     Wearable.getDataClient(a).removeListener(this)
+    Wearable.getCapabilityClient(a).removeListener(this)
   }
 
   override fun onMessageReceived(message: MessageEvent) {
@@ -256,7 +281,22 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
 
   override fun onCapabilityChanged(devices: CapabilityInfo) {
     super.onCapabilityChanged(devices)
-    Log.d("wearable_communicator devices", devices.nodes.toString())
+    val device = mutableListOf<Map<String, String>>()
+    devices.nodes.forEach{ nodes ->
+      device.add(mapOf(
+        "id" to nodes.id.toString(),
+        "name" to nodes.displayName.toString(),
+        "connected" to nodes.isNearby.toString()
+      ))
+    }
+    Log.d(TAG, device.toString())
+
+    pairedDevicesListenerIds.forEach { id ->
+      channel.invokeMethod("deviceReceived", hashMapOf(
+        "id" to id,
+        "args" to device.toString()
+      ))
+    }
   }
 }
 

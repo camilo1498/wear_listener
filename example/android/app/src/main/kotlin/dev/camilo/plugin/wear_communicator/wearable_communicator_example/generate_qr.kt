@@ -16,7 +16,7 @@ class GenerateQrCode {
     fun getQrCodeBitmap(token: String, context: Context): Bitmap? {
         val data = QrData.Url(token)
         val generator: QrCodeGenerator = QrGenerator()
-        val options = QrOptions.Builder(600)
+        val options = QrOptions.Builder(700)
                 .setPadding(.0f)
                 .setColors(
                         QrColors(
@@ -26,7 +26,6 @@ class GenerateQrCode {
                                         .Solid(Color.TRANSPARENT),
                         )
                 )
-
                 .setElementsShapes(
                         QrElementsShapes(
                                 darkPixel = QrPixelShape.Circle(),

@@ -20,9 +20,9 @@ class WearResponse {
   });
 
   factory WearResponse.fromJson(Map<String, dynamic> json) => WearResponse(
-    id: json["id"],
-    name: json["name"],
-    connected: json["connected"],
+    id: json["id"] ?? 'no data',
+    name: json["name"] ?? 'no data',
+    connected: json["connected"] == 'true' ? true : false,
   );
 
   Map<String, dynamic> toJson() => {

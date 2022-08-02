@@ -20,18 +20,18 @@ class _MyAppState extends State<MyApp> {
   TextEditingController? _controller;
   String value = '';
   String message = '';
+  String devices = '';
   String key = '';
-  WearResponse wearResponse = WearResponse();
+  List<WearResponse> wearResponse = [];
   late SharedPreferences prefs;
 
 
   @override
   void initState() {
     super.initState();
-    _getConnection();
     _init();
     _controller = TextEditingController();
-
+    _getConnection();
     WearableListener.listenForMessage((msg) {
       debugPrint('message $msg');
       WearableCommunicator.sendMessage({
@@ -39,8 +39,11 @@ class _MyAppState extends State<MyApp> {
       });
       setState(() => message = msg);
     });
-    WearableListener.listenForDataLayer((msg) {
-      debugPrint('Data layer flutter: $msg');
+
+    WearableListener.listenPairedDevices((msg) async{
+      debugPrint('flutter paired devices: $msg');
+      await _getConnection();
+      setState(() => devices = msg);
     });
   }
 
@@ -56,8 +59,15 @@ class _MyAppState extends State<MyApp> {
 
   _getConnection()async{
     final map = await WearableCommunicator.getNode();
+    print('============');
+    print(map.toString());
+    print('============');
     setState(() {
-      wearResponse = WearResponse.fromJson(Map<String, dynamic>.from(map));
+      List<WearResponse> localRes = [];
+      map.map((e) {
+        localRes.add(WearResponse.fromJson(Map<String, dynamic>.from(e)));
+      }).toList();
+      wearResponse = localRes;
     });
   }
 
@@ -69,24 +79,25 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
           actions: [
             IconButton(
-              onPressed: () {
-                _getConnection();
+              onPressed: () async {
+                await _getConnection();
               },
               icon: const Icon(Icons.refresh),
             )
           ],
         ),
-        body: Center(
+        body: wearResponse.isNotEmpty
+            ? Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 30,),
               Text(
-                wearResponse.connected ? 'Wear connected' : 'Wear disconnected',
+                wearResponse[0].connected ? 'Wear connected' : 'Wear disconnected',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: wearResponse.connected ? Colors.green : Colors.red
+                    color: wearResponse[0].connected ? Colors.green : Colors.red
 
                 ),
               ),
@@ -94,8 +105,8 @@ class _MyAppState extends State<MyApp> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _wearInfo(title: 'Device id', subTitle: wearResponse.id != null ? wearResponse.id! : ''),
-                  _wearInfo(title: 'Device name', subTitle: wearResponse.name != null ? wearResponse.name! : ''),
+                  _wearInfo(title: 'Device id', subTitle: wearResponse[0].id != null ? wearResponse[0].id! : ''),
+                  _wearInfo(title: 'Device name', subTitle: wearResponse[0].name != null ? wearResponse[0].name! : ''),
                 ],
               ),
               const SizedBox(height: 30,),
@@ -126,7 +137,7 @@ class _MyAppState extends State<MyApp> {
                 child: const Text('Send token'),
                 onPressed: () {
                   primaryFocus!.unfocus(disposition: UnfocusDisposition.scope);
-                  if(wearResponse.connected){
+                  if(wearResponse[0].connected){
                     WearableCommunicator.sendMessage({
                       "text": Random.secure().nextDouble().toString()
                     });
@@ -143,9 +154,32 @@ class _MyAppState extends State<MyApp> {
                         color: Colors.black
                     ),
                   )
+              ),
+              const SizedBox(height: 30,),
+              Container(
+                  alignment: Alignment.center,
+                  child:const  Text(
+                    "devices",
+                    style:  TextStyle(
+                        color: Colors.black
+                    ),
+                  )
+              ),
+              const SizedBox(height: 30,),
+              Container(
+                  alignment: Alignment.center,
+                  child: Text(
+                    devices,
+                    style: const TextStyle(
+                        color: Colors.black
+                    ),
+                  )
               )
             ],
           ),
+        )
+            : const Center(
+          child: CircularProgressIndicator(),
         ),
       ),
     );

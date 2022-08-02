@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity(),
                     /** show qr code **/
                     Box(
                             modifier = Modifier
-                                    .fillMaxSize().wrapContentSize(Alignment.Center),
+                                    .fillMaxSize().wrapContentSize(Alignment.Center).background(Color.Black),
                             contentAlignment = Alignment.Center,
                     ){
                         /** validate if qrCode is not null **/

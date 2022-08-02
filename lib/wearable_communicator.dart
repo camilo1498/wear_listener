@@ -14,7 +14,6 @@ class WearableCommunicator {
   MethodChannel('wearableCommunicator');
 
   /// send message to watch
-  /// the message must conform to https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html
   ///
   /// android consideration: message will be converted to a json string and send on a channel name "MessageChannel"
   static void sendMessage(Map<String, dynamic> message) async {
@@ -22,7 +21,6 @@ class WearableCommunicator {
   }
 
   /// set constant data
-  /// the data must conform to https://api.flutter.dev/flutter/services/StandardMessageCodec-class.html
   /// android: sets data on data layer by the path
   static void setData(String path, Map<String, dynamic> data) async {
     if (!path.startsWith("/")) {
@@ -47,6 +45,8 @@ class WearableListener {
   static final Map<int, MultiUseCallback> _messageCallbacksById = {};
   static final Map<int, MultiUseCallback> _dataCallbacksById = {};
   static final Map<int, MultiUseCallback> _nodeCallbacksById = {};
+  static final Map<int, MultiUseCallback> _pairedDevicesById = {};
+
 
   WearableListener() {
     _channel.setMethodCallHandler(_methodCallHandler);
@@ -54,7 +54,9 @@ class WearableListener {
 
   static Future<void> _methodCallHandler(MethodCall call) async {
     switch (call.method) {
+
       case 'messageReceived':
+        print('============== listen messages');
         if (call.arguments["args"] is String) {
           try {
             Map? value = json.decode(call.arguments["args"]);
@@ -67,6 +69,22 @@ class WearableListener {
           _messageCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
         }
         break;
+
+      case 'deviceReceived':
+        print('============== listen nodes');
+        if (call.arguments["args"] is String) {
+          try {
+            Map? value = json.decode(call.arguments["args"]);
+            _pairedDevicesById[call.arguments["id"]]!(value);
+          } catch (exeption) {
+            _pairedDevicesById[call.arguments["id"]]!(
+                call.arguments["args"]);
+          }
+        } else {
+          _pairedDevicesById[call.arguments["id"]]!(call.arguments["args"]);
+        }
+        break;
+
       case 'dataReceived':
         if (call.arguments["args"] is String) {
           try {
@@ -117,5 +135,12 @@ class WearableListener {
     int currentListenerId = _nextCallbackId++;
     _dataCallbacksById[currentListenerId] = callback;
     await _channel.invokeMethod("listenData", currentListenerId);
+  }
+
+  static Future<void> listenPairedDevices(MultiUseCallback callback) async {
+    _channel.setMethodCallHandler(_methodCallHandler);
+    int currentListenerId = _nextCallbackId++;
+    _pairedDevicesById[currentListenerId] = callback;
+    await _channel.invokeMethod("listenDevices", currentListenerId);
   }
 }
