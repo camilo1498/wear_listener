@@ -14,7 +14,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import org.json.JSONObject
 
-class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, MessageClient.OnMessageReceivedListener, DataClient.OnDataChangedListener {
+class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, MessageClient.OnMessageReceivedListener, DataClient.OnDataChangedListener, CapabilityClient.OnCapabilityChangedListener, WearableListenerService() {
 
   private lateinit var channel : MethodChannel
 
@@ -252,6 +252,11 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
 
       }
     }
+  }
+
+  override fun onCapabilityChanged(devices: CapabilityInfo) {
+    super.onCapabilityChanged(devices)
+    Log.d("wearable_communicator devices", devices.nodes.toString())
   }
 }
 
