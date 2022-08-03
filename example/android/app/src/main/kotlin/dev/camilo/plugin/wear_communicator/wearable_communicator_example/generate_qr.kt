@@ -11,10 +11,10 @@ import com.github.alexzhirkevich.customqrgenerator.QrOptions
 import com.github.alexzhirkevich.customqrgenerator.style.*
 
 class GenerateQrCode {
-    fun getQrCodeBitmap(token: String, context: Context): Bitmap? {
+    fun getQrCodeBitmap(token: String): Bitmap? {
         val data = QrData.Url(token)
         val generator: QrCodeGenerator = QrGenerator()
-        val options = QrOptions.Builder(700)
+        val options = QrOptions.Builder(650)
                 .setPadding(.0f)
                 .setColors(
                         QrColors(

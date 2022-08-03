@@ -17,8 +17,7 @@ class GenerateQrCode {
                 /** send request by path **/
                 messageClient.sendMessage(
                         it.id,
-                        "/token",
-                        Random(34535345).toString().toByteArray()
+                        "/token", "request_token".toByteArray()
                 ).addOnSuccessListener {
                     Log.d("Wear", "Sent message to phone")
                 }

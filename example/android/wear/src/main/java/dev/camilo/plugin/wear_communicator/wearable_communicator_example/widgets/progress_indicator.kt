@@ -67,7 +67,7 @@ fun ProgressIndicatorWidget(
 
     /** Qr container **/
     Box(  modifier = Modifier
-        .size(185.dp)
+        .size(195.dp)
             .wrapContentSize(Alignment.Center)
         .clip(shape = CircleShape),
         contentAlignment = Alignment.Center,

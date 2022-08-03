@@ -1,8 +1,10 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.google.android.gms.wearable.*
 import java.io.ByteArrayOutputStream
 
@@ -15,6 +17,7 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
         super.onDataChanged(dataEvents)
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
         /** instance of shared preferences **/
@@ -30,13 +33,13 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
                 }
 
                 /** Generate QR Code token **/
-                val qrCode = GenerateQrCode().getQrCodeBitmap(token, this)
+                val qrCode = GenerateQrCode().getQrCodeBitmap("0x01000000469A4DA9932B403EE35BA88CF41DF69152447E35E97282F28EC33B879393EC3E715C8C983A0E96275FD6C3D90366F1D5630EBD9EB1C786CAC718185957FFB3C89D878681608CA038196FA1BFAB3B27944D42D75C3429293C")
 
                 /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)
 
                 /** send string qrcode to wear device **/
-                messageClient.sendMessage(messageEvent.sourceNodeId, "wear://token",
+                messageClient.sendMessage(messageEvent.sourceNodeId, "/token",
                     bitmap.toByteArray())
 
             }
@@ -44,11 +47,12 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
     }
 
     /** convert bitmap to string base64 **/
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun bitMapToString(bitmap: Bitmap): String {
         val arrayOutput = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 30, arrayOutput)
+        bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 0, arrayOutput)
         val image = arrayOutput.toByteArray()
-        return Base64.encodeToString(image, Base64.DEFAULT)
+        return Base64.encodeToString(image, Base64.NO_PADDING)
     }
 
     override fun onCapabilityChanged(devices: CapabilityInfo) {

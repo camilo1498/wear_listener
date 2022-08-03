@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.wearable.*
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.functions.GenerateQrCode
@@ -29,8 +30,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
 class MainActivity : ComponentActivity(),
-        DataClient.OnDataChangedListener,
-        MessageClient.OnMessageReceivedListener {
+    DataClient.OnDataChangedListener,
+    MessageClient.OnMessageReceivedListener {
 
     /** mutable variables **/
     var value = mutableStateOf(12f)
@@ -47,35 +48,40 @@ class MainActivity : ComponentActivity(),
             override fun run() {
                 counter.start()
             }
-        }, 1500)
+        }, 700)
 
         /** render main layout **/
         setContent {
             /** main container **/
             Box(modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White),
-                    contentAlignment = Alignment.Center){
+                .fillMaxSize()
+                .background(Color.White),
+                contentAlignment = Alignment.Center){
                 /** show progress indicator **/
                 ProgressIndicatorWidget(
-                        /** set value **/
-                        textValue = value.value
+                    /** set value **/
+                    textValue = value.value
                 ) {
                     /** show qr code **/
                     Box(
-                            modifier = Modifier
-                                    .fillMaxSize().wrapContentSize(Alignment.Center).background(Color.Black),
-                            contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize().wrapContentSize(Alignment.Center).padding(end = 2.dp),
+                        contentAlignment = Alignment.Center,
                     ){
+                        /** get wear screen size **/
+                        val configuration = LocalConfiguration.current
+                        val screenHeight = configuration.screenHeightDp.dp
+                        val screenWidth = configuration.screenWidthDp.dp
+
                         /** validate if qrCode is not null **/
                         if(qrCode.value != null)
                             Image(
-                                    bitmap = qrCode.value!!.asImageBitmap(),
-                                    contentDescription = "qr code",
-                                    alignment = Alignment.Center,
-                                    modifier = Modifier
-                                            .height(300.dp)
-                                            .width(300.dp),
+                                bitmap = qrCode.value!!.asImageBitmap(),
+                                contentDescription = "qr code",
+                                alignment = Alignment.Center,
+                                modifier = Modifier
+                                    .height(screenHeight - 12.dp)
+                                    .width(screenWidth - 12.dp),
                             )
                     }
                 }
@@ -132,7 +138,7 @@ class MainActivity : ComponentActivity(),
             value.value = 12f
             Handler().postDelayed({
                 this.start()
-            }, 1000)
+            }, 600)
         }
     }
 }
