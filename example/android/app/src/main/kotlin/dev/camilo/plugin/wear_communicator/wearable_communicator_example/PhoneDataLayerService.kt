@@ -23,10 +23,9 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
         /** received message path **/
         when (messageEvent.path) {
             "/token" -> {
+
                 /** Get user token from local storage **/
-                val token = if(mPrefs.getString("flutter." + "wear", "").toString().isNotEmpty()){
-                    mPrefs.getString("flutter." + "wear", "").toString()
-                } else{
+                val token = mPrefs.getString("flutter." + "wear", "").toString().ifEmpty {
                     "contact with support"
                 }
 
@@ -37,7 +36,7 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
                 val bitmap = bitMapToString(qrCode!!)
 
                 /** send string qrcode to wear device **/
-                messageClient.sendMessage(messageEvent.sourceNodeId, "/token",
+                messageClient.sendMessage(messageEvent.sourceNodeId, "wear://token",
                     bitmap.toByteArray())
 
             }

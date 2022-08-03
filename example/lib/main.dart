@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
       setState(() => message = msg);
     });
 
-    WearableListener.listenPairedDevices((msg) async{
+    WearableListener.listenAvailableNodes((msg) async{
       debugPrint('flutter paired devices: $msg');
       await _getConnection();
       setState(() => devices = msg);

@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'wearable_communicator_platform_interface.dart';
@@ -14,19 +15,8 @@ class WearableCommunicator {
   MethodChannel('wearableCommunicator');
 
   /// send message to watch
-  ///
-  /// android consideration: message will be converted to a json string and send on a channel name "MessageChannel"
   static void sendMessage(Map<String, dynamic> message) async {
     await _channel.invokeMethod('sendMessage', message);
-  }
-
-  /// set constant data
-  /// android: sets data on data layer by the path
-  static void setData(String path, Map<String, dynamic> data) async {
-    if (!path.startsWith("/")) {
-      path = "/$path";
-    }
-    await _channel.invokeListMethod('setData', {"path": path, "data": data});
   }
 
   static getNode() async{
@@ -43,25 +33,25 @@ class WearableListener {
   static const _channel = MethodChannel("wearableCommunicator");
   static int _nextCallbackId = 0;
   static final Map<int, MultiUseCallback> _messageCallbacksById = {};
-  static final Map<int, MultiUseCallback> _dataCallbacksById = {};
   static final Map<int, MultiUseCallback> _nodeCallbacksById = {};
   static final Map<int, MultiUseCallback> _pairedDevicesById = {};
+  static final Map<int, MultiUseCallback> _availableNodesById = {};
 
 
   WearableListener() {
     _channel.setMethodCallHandler(_methodCallHandler);
   }
 
+  /// Method channel functions
   static Future<void> _methodCallHandler(MethodCall call) async {
     switch (call.method) {
 
       case 'messageReceived':
-        print('============== listen messages');
         if (call.arguments["args"] is String) {
           try {
             Map? value = json.decode(call.arguments["args"]);
             _messageCallbacksById[call.arguments["id"]]!(value);
-          } catch (exeption) {
+          } catch (e) {
             _messageCallbacksById[call.arguments["id"]]!(
                 call.arguments["args"]);
           }
@@ -70,13 +60,26 @@ class WearableListener {
         }
         break;
 
+      case 'availableNode':
+        if (call.arguments["args"] is String) {
+          try {
+            Map? value = json.decode(call.arguments["args"]);
+            _availableNodesById[call.arguments["id"]]!(value);
+          } catch (e) {
+            _availableNodesById[call.arguments["id"]]!(
+                call.arguments["args"]);
+          }
+        } else {
+          _availableNodesById[call.arguments["id"]]!(call.arguments["args"]);
+        }
+        break;
+
       case 'deviceReceived':
-        print('============== listen nodes');
         if (call.arguments["args"] is String) {
           try {
             Map? value = json.decode(call.arguments["args"]);
             _pairedDevicesById[call.arguments["id"]]!(value);
-          } catch (exeption) {
+          } catch (e) {
             _pairedDevicesById[call.arguments["id"]]!(
                 call.arguments["args"]);
           }
@@ -85,25 +88,12 @@ class WearableListener {
         }
         break;
 
-      case 'dataReceived':
-        if (call.arguments["args"] is String) {
-          try {
-            Map? value = json.decode(call.arguments["args"]);
-            _dataCallbacksById[call.arguments["id"]]!(value);
-          } catch (exeption) {
-            _dataCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
-          }
-        } else {
-          _dataCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
-        }
-        break;
-
       case 'getWearableNode':
         if (call.arguments["args"] is String) {
           try {
             Map? value = json.decode(call.arguments["args"]);
             _nodeCallbacksById[call.arguments["id"]]!(value);
-          } catch (exeption) {
+          } catch (e) {
             _nodeCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
           }
         } else {
@@ -111,15 +101,16 @@ class WearableListener {
         }
         break;
       default:
-        print(
+        if (kDebugMode) {
+          print(
             'TestFairy: Ignoring invoke from native. This normally shouldn\'t happen.');
+        }
     }
   }
 
 
 
   /// register a callback function for wearable messages
-  /// returns a function to stop the listener
   static Future<void> listenForMessage(MultiUseCallback callback) async {
     _channel.setMethodCallHandler(_methodCallHandler);
     int currentListenerId = _nextCallbackId++;
@@ -127,20 +118,11 @@ class WearableListener {
     await _channel.invokeMethod("listenMessages", currentListenerId);
   }
 
-
-  /// register a function for data layer events
-  /// returns a function to stop the listener
-  static Future<void> listenForDataLayer(MultiUseCallback callback) async {
+  /// return a function listener for paired devices
+  static Future<void> listenAvailableNodes(MultiUseCallback callback) async {
     _channel.setMethodCallHandler(_methodCallHandler);
     int currentListenerId = _nextCallbackId++;
-    _dataCallbacksById[currentListenerId] = callback;
-    await _channel.invokeMethod("listenData", currentListenerId);
-  }
-
-  static Future<void> listenPairedDevices(MultiUseCallback callback) async {
-    _channel.setMethodCallHandler(_methodCallHandler);
-    int currentListenerId = _nextCallbackId++;
-    _pairedDevicesById[currentListenerId] = callback;
+    _availableNodesById[currentListenerId] = callback;
     await _channel.invokeMethod("listenDevices", currentListenerId);
   }
 }

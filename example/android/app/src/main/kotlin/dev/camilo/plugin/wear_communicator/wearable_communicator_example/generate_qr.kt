@@ -11,8 +11,6 @@ import com.github.alexzhirkevich.customqrgenerator.QrOptions
 import com.github.alexzhirkevich.customqrgenerator.style.*
 
 class GenerateQrCode {
-
-    @SuppressLint("Range")
     fun getQrCodeBitmap(token: String, context: Context): Bitmap? {
         val data = QrData.Url(token)
         val generator: QrCodeGenerator = QrGenerator()
@@ -41,6 +39,5 @@ class GenerateQrCode {
                 .setCodeShape(QrShape.Circle())
                 .build()
         return generator.generateQrCode(data, options)
-
     }
 }

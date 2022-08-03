@@ -1,7 +1,7 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator
 
 import android.app.Activity
-import androidx.annotation.MainThread
+import android.net.Uri
 import androidx.annotation.NonNull
 import com.google.android.gms.wearable.*
 import io.flutter.Log
@@ -9,6 +9,7 @@ import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -24,18 +25,16 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
 
   private var activity: Activity? = null
   private val messageListenerIds = mutableListOf<Int>()
-  private val dataListenerIds = mutableListOf<Int>()
   private val pairedDevicesListenerIds = mutableListOf<Int>()
+  private var binary: BinaryMessenger? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "wearableCommunicator")
-    channel.setMethodCallHandler(this);
+    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "wearableCommunicator")
+    binary = flutterPluginBinding.binaryMessenger
+    channel.setMethodCallHandler(this)
   }
 
-  companion object {
-    const val TAG = "WearableCommunicator"
-  }
-
+  /** Method channels **/
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
     when (call.method) {
       "getPlatformVersion" -> {
@@ -48,14 +47,11 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         sendMessage(call, result)
       }
       "setData" -> {
-        setData(call, result)
+        result.success("no data")
       }
       "listenMessages" -> {
         registerMessageListener(call)
         result.success(null)
-      }
-      "listenData" -> {
-        registerDataLayerListener(call)
       }
       "listenDevices" -> {
         registerPairedDevicesListener(call)
@@ -67,43 +63,33 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     }
   }
 
-  /// message listener
+  /** Message listener **/
   private fun registerMessageListener(call: MethodCall) {
     try {
       val id = call.arguments<Int>()
       messageListenerIds.add(id!!)
-      Log.e(TAG, "Initialized message listener ${messageListenerIds.size}")
     } catch (ex: Exception) {
       Log.e(TAG, ex.localizedMessage!!, ex)
     }
   }
 
-  // dataLaye listener
-  private fun registerDataLayerListener(call: MethodCall) {
-    try {
-      val id = call.arguments<Int>()
-      dataListenerIds.add(id!!)
-    } catch (ex: Exception) {
-      Log.e(TAG, ex.localizedMessage!!, ex)
-    }
-  }
-
+  /** Wear node listener **/
   private fun registerPairedDevicesListener(call: MethodCall) {
     try {
       val id = call.arguments<Int>()
       pairedDevicesListenerIds.add(id!!)
-      Log.e(TAG, "Initialized paired devices ${pairedDevicesListenerIds.size}")
     } catch (ex: Exception) {
       Log.e(TAG, ex.localizedMessage!!, ex)
     }
   }
 
-  /// get wear node
+  /** get Wear nodes **/
   private fun getWearableNode(result: Result) {
     try {
+      /** search reachable nodes **/
       Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
         if(nodes.isNotEmpty()){
-
+          /** save available nodes **/
           val device = mutableListOf<Map<String, String>>()
           nodes.forEach{ node ->
             device.add(mapOf(
@@ -112,10 +98,10 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
               "connected" to node.isNearby.toString()
             ))
           }
+          /** send to method channel **/
           result.success(device)
-
         } else{
-          Log.d(TAG, "disconnected")
+          /** send to method channel **/
           result.success(
             mutableListOf(hashMapOf(
             "id" to "no data",
@@ -125,7 +111,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
           )
         }
 
-
+        /** Error handler **/
       }.addOnFailureListener { ex ->
         result.error(ex.message!!, ex.localizedMessage, ex)
       }
@@ -134,7 +120,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     }
   }
 
-  ///send data to wear
+  /** Send messaged to wear **/
   private fun sendMessage(call: MethodCall, result: Result) {
     if (activity == null) {
       result.success(null)
@@ -142,7 +128,9 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       try {
         val argument = call.arguments<HashMap<String, Any>>()
         val client = Wearable.getMessageClient(activity!!)
+        /** get available nodes **/
         Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
+          /** send to method channel **/
           nodes.forEach { node ->
             val json = (argument as Map<*, *>?)?.let { JSONObject(it).toString() }
             client.sendMessage(node.id, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
@@ -150,6 +138,8 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
             }
           }
           result.success(null)
+
+          /** Error handler **/
         }.addOnFailureListener { ex ->
           result.error(ex.message!!, ex.localizedMessage, ex)
         }
@@ -160,96 +150,55 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     }
   }
 
-
-  /// set data to wear from dataLayer
-  private fun setData(call: MethodCall, result: Result) {
-    try {
-      val data = call.argument<HashMap<String, Any>>("data") ?: return
-      Log.d(TAG, data.toString())
-      val name = call.argument<String>("path") ?: return
-      val request = PutDataMapRequest.create(name).run {
-        loop@ for ((key, value) in data) {
-          when(value) {
-            is String -> {
-              dataMap.putString(key, value)
-            }
-            is Int -> dataMap.putInt(key, value)
-            is Float -> dataMap.putFloat(key, value)
-            is Double -> dataMap.putDouble(key, value)
-            is Long -> dataMap.putLong(key, value)
-            is Boolean -> dataMap.putBoolean(key, value)
-            is List<*> -> {
-              if (value.isEmpty()) continue@loop
-              value.asArrayListOfType<Int>()?.let {
-                dataMap.putIntegerArrayList(key, it)
-              }
-              value.asArrayListOfType<String>()?.let {
-                dataMap.putStringArrayList(key, it)
-              }
-              value.asArrayOfType<Float>()?.let {
-                dataMap.putFloatArray(key, it.toFloatArray())
-              }
-              value.asArrayOfType<Long>()?.let {
-                dataMap.putLongArray(key, it.toLongArray())
-              }
-            }
-            else -> {
-              Log.d(TAG, "could not translate value of type ${value.javaClass.name}")
-            }
-          }
-        }
-        asPutDataRequest()
-      }
-      Wearable.getDataClient(activity!!).putDataItem(request).addOnSuccessListener {
-        Log.d(TAG, "Set data on wear")
-      }
-      result.success(null)
-    } catch (ex: Exception) {
-      Log.e(TAG, "Failed to send message", ex)
-    }
-  }
-
-
-
+  /** Close channel **/
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
   }
 
+  /** Initialize/reactivate  listeners **/
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
     startWearableClients(activity!!)
   }
 
+  /** Close listeners **/
   override fun onDetachedFromActivityForConfigChanges() {
     val a = activity ?: return
     detachWearableClients(a)
     activity = null
   }
 
+  /** Initialize/reactivate listeners **/
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     activity = binding.activity
     startWearableClients(activity!!)
   }
 
+  /** Close listeners **/
   override fun onDetachedFromActivity() {
     val a = activity ?: return
     detachWearableClients(a)
     activity = null
   }
 
+  /** Initialize listeners **/
   private fun startWearableClients(a: Activity) {
     Wearable.getMessageClient(a).addListener(this)
     Wearable.getDataClient(a).addListener(this)
-    Wearable.getCapabilityClient(a).addListener(this,"")
+    /** required to listen connected devices **/
+    Wearable.getCapabilityClient(a).addListener(this, Uri.parse("wear://"), CapabilityClient.FILTER_REACHABLE)
   }
 
+  /** Close listeners **/
   private fun detachWearableClients(a: Activity) {
     Wearable.getMessageClient(a).removeListener(this)
     Wearable.getDataClient(a).removeListener(this)
     Wearable.getCapabilityClient(a).removeListener(this)
   }
 
+  /** Listen received messages **/
   override fun onMessageReceived(message: MessageEvent) {
+    /** send to method channel **/
     val data = String(message.data)
     messageListenerIds.forEach { id ->
       channel.invokeMethod("messageReceived", hashMapOf(
@@ -257,30 +206,12 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         "args" to data
       ))
     }
-
   }
 
-  override fun onDataChanged(events: DataEventBuffer) {
-    events.forEach { event ->
-      if (event.type == DataEvent.TYPE_CHANGED) {
-        val datamap = DataMapItem.fromDataItem(event.dataItem).dataMap
-        val map = hashMapOf<String, Any>()
-        for (key in datamap.keySet()) {
-          map[key] = datamap.get(key)!!
-        }
-        dataListenerIds.forEach { id ->
-          channel.invokeMethod("dataReceived", hashMapOf(
-            "id" to id,
-            "args" to map
-          ))
-        }
-
-      }
-    }
-  }
-
+  /** Listen wear connected nodes **/
   override fun onCapabilityChanged(devices: CapabilityInfo) {
     super.onCapabilityChanged(devices)
+    /** save available nodes **/
     val device = mutableListOf<Map<String, String>>()
     devices.nodes.forEach{ nodes ->
       device.add(mapOf(
@@ -289,26 +220,18 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         "connected" to nodes.isNearby.toString()
       ))
     }
-    Log.d(TAG, device.toString())
-
+    /** send to method channel **/
     pairedDevicesListenerIds.forEach { id ->
-      channel.invokeMethod("deviceReceived", hashMapOf(
+      channel.invokeMethod("availableNode", hashMapOf(
         "id" to id,
         "args" to device.toString()
       ))
+
     }
+
+  }
+
+  companion object {
+    const val TAG = "WearableCommunicator"
   }
 }
-
-inline fun <reified T> List<*>.asArrayListOfType(): ArrayList<T>? =
-  if (all { it is T })
-    @Suppress("UNCHECKED_CAST")
-    this as ArrayList<T> else
-    null
-
-inline fun <reified T> List<*>.asArrayOfType(): Array<T>? =
-  if (all { it is T })
-    @Suppress("UNCHECKED_CAST")
-    this as Array<T> else
-    null
-
