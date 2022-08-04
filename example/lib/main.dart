@@ -206,13 +206,31 @@ class _MyAppState extends State<MyApp> {
                 ),
                 const SizedBox(height: 30,),
                 if(allNodesWithInstalledApp.isNotEmpty)
-                  ...allNodesWithInstalledApp.map((node) => ListTile(
-                    title: Column(
-                      children: [
-                        Text(node.id.toString()),
-                        Text(node.name.toString()),
-                        Text(node.connected.toString()),
-                      ],
+                  ...allNodesWithInstalledApp.map((node) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 0.1,
+                                blurRadius: 0.1,
+                                offset: const Offset(0, 1)
+                            ),
+                          ]
+                      ),
+                      child: ListTile(
+                        title: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('id: ${node.id.toString()}'),
+                            Text('name: ${node.name.toString()}'),
+                            Text('connected: ${node.connected.toString()}'),
+                          ],
+                        ),
+                      ),
                     ),
                   )),
 
@@ -228,16 +246,34 @@ class _MyAppState extends State<MyApp> {
                 ),
                 const SizedBox(height: 30,),
                 if(allConnectedNodes.isNotEmpty)
-                  ...allConnectedNodes.map((node) => ListTile(
-                    onTap: (){
-                      WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
-                    },
-                    title: Column(
-                      children: [
-                        Text(node.id.toString()),
-                        Text(node.name.toString()),
-                        Text(node.connected.toString()),
-                      ],
+                  ...allConnectedNodes.map((node) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            spreadRadius: 0.1,
+                            blurRadius: 0.1,
+                            offset: const Offset(0, 1)
+                          ),
+                        ]
+                      ),
+                      child: ListTile(
+                        onTap: (){
+                          WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
+                        },
+                        title: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('id: ${node.id.toString()}'),
+                            Text('name: ${node.name.toString()}'),
+                            Text('connected: ${node.connected.toString()}'),
+                          ],
+                        ),
+                      ),
                     ),
                   ))
               ],
