@@ -289,31 +289,44 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
 
   }
 
+  /** Open wearable play store **/
   private fun openPlayStoreOnWearDevicesWithoutApp(call: MethodCall, result: Result) {
     try {
       /** Local variables **/
       val argument = call.arguments<HashMap<String, Any>>()
       val nodeId: String = argument!!.map { msg -> msg.value}[0].toString()
+      var isInstall = false
 
-      allNodesWithInstallApp?.forEach{ node ->
-        if(nodeId != node.id.toString()) {
-          /** Initialize intent **/
-          val intent = Intent(Intent.ACTION_VIEW)
-            .addCategory(Intent.CATEGORY_BROWSABLE)
-            .setData(Uri.parse("market://details?id=wearablesoftware.wearspotifyplayer&hl=es_CO&gl=US"))
-
-          /** Open play store in wearOS **/
-          remoteActivityHelper.startRemoteActivity(
-              targetIntent = intent,
-              targetNodeId = nodeId
-            )
-
-          Log.d(TAG, "opening in wearable")
-        } else {
-
-          Log.e(TAG, "This device already has an installed app")
-
+      /** search node into list **/
+      for(node in allNodesWithInstallApp!!) {
+        if(node.id.toString() == nodeId) {
+          isInstall = true
         }
+      }
+
+      /** validate if app is install in wearable **/
+      if(isInstall) {
+        Log.e(TAG, "This device already has an installed app")
+        result.success(mapOf(
+          "success" to "error",
+          "message" to "This device already has an installed app"
+        ))
+      } else {
+        /** Initialize intent **/
+        val intent = Intent(Intent.ACTION_VIEW)
+          .addCategory(Intent.CATEGORY_BROWSABLE)
+          .setData(Uri.parse("market://details?id=wearablesoftware.wearspotifyplayer&hl=es_CO&gl=US"))
+
+        /** Open play store in wearOS **/
+        remoteActivityHelper.startRemoteActivity(
+          targetIntent = intent,
+          targetNodeId = nodeId
+        )
+        result.success(mapOf(
+          "success" to "error",
+          "message" to "opening in wearable"
+        ))
+        Log.d(TAG, "opening in wearable")
       }
     } catch (cancellationException: CancellationException) {
       Log.e(TAG, "Opening action was canceled")
