@@ -19,8 +19,21 @@ class WearableCommunicator {
     await _channel.invokeMethod('sendMessage', message);
   }
 
-  static getNode() async{
+  /// get all paired connected nodes
+  static getAllConnectedNodes() async{
     final result = await _channel.invokeMethod('getWearableNode');
+    return result;
+  }
+
+  /// get all paired nodes with app isntalled
+  static getAllNodesWithInstalledApp() async{
+    final result = await _channel.invokeMethod('getWearableNodeWithInstallApp');
+    return result;
+  }
+
+  /// open play store in paired node that does not has installed app
+  static openPlayStoreInWearable(Map<String, dynamic> message) async{
+    final result = await _channel.invokeMethod('openPlayStoreInWearable', message);
     return result;
   }
 }
@@ -30,14 +43,19 @@ typedef MultiUseCallback = void Function(dynamic msg);
 
 /// Holder for wearable data and messages
 class WearableListener {
+  /// instances
   static const _channel = MethodChannel("wearableCommunicator");
+
+  /// variables
   static int _nextCallbackId = 0;
   static final Map<int, MultiUseCallback> _messageCallbacksById = {};
   static final Map<int, MultiUseCallback> _nodeCallbacksById = {};
+  static final Map<int, MultiUseCallback> _nodeInstalledAppCallbacksById = {};
   static final Map<int, MultiUseCallback> _pairedDevicesById = {};
   static final Map<int, MultiUseCallback> _availableNodesById = {};
 
 
+  /// initialize method channel
   WearableListener() {
     _channel.setMethodCallHandler(_methodCallHandler);
   }
@@ -98,6 +116,19 @@ class WearableListener {
           }
         } else {
           _nodeCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+        }
+        break;
+
+      case 'getWearableNodeWithInstallApp':
+        if (call.arguments["args"] is String) {
+          try {
+            Map? value = json.decode(call.arguments["args"]);
+            _nodeInstalledAppCallbacksById[call.arguments["id"]]!(value);
+          } catch (e) {
+            _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+          }
+        } else {
+          _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
         }
         break;
       default:

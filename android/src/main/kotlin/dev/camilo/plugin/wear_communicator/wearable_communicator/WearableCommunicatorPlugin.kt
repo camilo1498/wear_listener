@@ -1,19 +1,22 @@
 package dev.camilo.plugin.wear_communicator.wearable_communicator
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.annotation.NonNull
+import androidx.wear.remote.interactions.RemoteActivityHelper
+import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import io.flutter.Log
-
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.*
 import org.json.JSONObject
 
 class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
@@ -21,17 +24,33 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   DataClient.OnDataChangedListener, CapabilityClient.OnCapabilityChangedListener,
   WearableListenerService() {
 
+  /** instances **/
   private lateinit var channel : MethodChannel
-
   private var activity: Activity? = null
+  private lateinit var context: Context
+  private lateinit var capabilityClient: CapabilityClient
+  private lateinit var remoteActivityHelper: RemoteActivityHelper
+  private lateinit var nodeClient: NodeClient
+
+  /** variables **/
   private val messageListenerIds = mutableListOf<Int>()
   private val pairedDevicesListenerIds = mutableListOf<Int>()
-  private var binary: BinaryMessenger? = null
+  private var allNodesWithInstallApp: Set<Node>? = null
+  private var allConnectedNodes: List<Node>? = null
+
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "wearableCommunicator")
-    binary = flutterPluginBinding.binaryMessenger
     channel.setMethodCallHandler(this)
+    context = flutterPluginBinding.applicationContext
+    CoroutineScope(Dispatchers.Main).launch {
+      withContext(Dispatchers.Default) {
+        /** Initialize instances **/
+        remoteActivityHelper = RemoteActivityHelper(context)
+        capabilityClient = Wearable.getCapabilityClient(context)
+        nodeClient = Wearable.getNodeClient(context)
+      }
+    }
   }
 
   /** Method channels **/
@@ -43,11 +62,11 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       "getWearableNode" -> {
         getWearableNode(result)
       }
+      "getWearableNodeWithInstallApp" -> {
+        getNodesWithInstalledApp(result)
+      }
       "sendMessage" -> {
         sendMessage(call, result)
-      }
-      "setData" -> {
-        result.success("no data")
       }
       "listenMessages" -> {
         registerMessageListener(call)
@@ -56,6 +75,9 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       "listenDevices" -> {
         registerPairedDevicesListener(call)
         result.success(null)
+      }
+      "openPlayStoreInWearable" -> {
+        openPlayStoreOnWearDevicesWithoutApp(call, result)
       }
       else -> {
         result.notImplemented()
@@ -83,15 +105,54 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     }
   }
 
-  /** get Wear nodes **/
+  /** get nodes with installed application **/
+  private fun getNodesWithInstalledApp(result: Result) {
+    try {
+      Thread(Runnable {
+        /** search all paired nodes with installed app ("wear path is the same that android wear capabilities file "res/values/wear.xml") **/
+        allNodesWithInstallApp = Tasks.await(capabilityClient.getCapability("wear", CapabilityClient.FILTER_ALL)).nodes
+        val device = mutableListOf<Map<String, String>>()
+        /** Validate nodes **/
+        if(allNodesWithInstallApp != null && (allNodesWithInstallApp as MutableSet<Node>).isNotEmpty()) {
+          (allNodesWithInstallApp as MutableSet<Node>).forEach { node ->
+            /** add node into a new json structure **/
+            device.add(mapOf(
+              "id" to node.id.toString(),
+              "name" to node.displayName.toString(),
+              "connected" to node.isNearby.toString()
+            ))
+
+            /** send to method channel **/
+          }
+          result.success(device)
+        } else {
+          /** send to method channel **/
+          result.success(mapOf(
+            "id" to "null",
+            "name" to "null",
+            "connected" to "false"
+          ))
+        }
+      }).start()
+    } catch (ex: Exception) {
+      Log.d(TAG, "Failed to get node", ex)
+    }
+  }
+
+  /** get all Wear nodes **/
   private fun getWearableNode(result: Result) {
     try {
-      /** search reachable nodes **/
-      Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
-        if(nodes.isNotEmpty()){
-          /** save available nodes **/
+      Thread(Runnable {
+        //getNodesWithInstalledApp(result)
+        /** search reachable nodes **/
+        allConnectedNodes = Tasks.await(nodeClient.connectedNodes)
+
+        /** validate nodes **/
+        if(allConnectedNodes != null && allConnectedNodes!!.isNotEmpty()){
           val device = mutableListOf<Map<String, String>>()
-          nodes.forEach{ node ->
+          /** add node into a new json structure **/
+          allConnectedNodes!!.forEach { node ->
+
             device.add(mapOf(
               "id" to node.id.toString(),
               "name" to node.displayName.toString(),
@@ -100,21 +161,17 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
           }
           /** send to method channel **/
           result.success(device)
-        } else{
+        } else {
           /** send to method channel **/
           result.success(
             mutableListOf(hashMapOf(
-            "id" to "no data",
-            "name" to "no data",
-            "connected" to false
-          ))
+              "id" to "no data",
+              "name" to "no data",
+              "connected" to false
+            ))
           )
         }
-
-        /** Error handler **/
-      }.addOnFailureListener { ex ->
-        result.error(ex.message!!, ex.localizedMessage, ex)
-      }
+      }).start()
     } catch (ex: Exception){
       Log.d(TAG, "Failed to get node", ex)
     }
@@ -185,7 +242,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   private fun startWearableClients(a: Activity) {
     Wearable.getMessageClient(a).addListener(this)
     Wearable.getDataClient(a).addListener(this)
-    /** required to listen connected devices **/
+    /** required to listen connected devices ("wear path is the same that android wear capabilities file "res/values/wear.xml") **/
     Wearable.getCapabilityClient(a).addListener(this, Uri.parse("wear://"), CapabilityClient.FILTER_REACHABLE)
   }
 
@@ -220,6 +277,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         "connected" to nodes.isNearby.toString()
       ))
     }
+    Log.e("device", devices.nodes.toString())
     /** send to method channel **/
     pairedDevicesListenerIds.forEach { id ->
       channel.invokeMethod("availableNode", hashMapOf(
@@ -231,7 +289,43 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
 
   }
 
+  private fun openPlayStoreOnWearDevicesWithoutApp(call: MethodCall, result: Result) {
+    try {
+      /** Local variables **/
+      val argument = call.arguments<HashMap<String, Any>>()
+      val nodeId: String = argument!!.map { msg -> msg.value}[0].toString()
+
+      allNodesWithInstallApp?.forEach{ node ->
+        if(nodeId != node.id.toString()) {
+          /** Initialize intent **/
+          val intent = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(Uri.parse("market://details?id=wearablesoftware.wearspotifyplayer&hl=es_CO&gl=US"))
+
+          /** Open play store in wearOS **/
+          remoteActivityHelper.startRemoteActivity(
+              targetIntent = intent,
+              targetNodeId = nodeId
+            )
+
+          Log.d(TAG, "opening in wearable")
+        } else {
+
+          Log.e(TAG, "This device already has an installed app")
+
+        }
+      }
+    } catch (cancellationException: CancellationException) {
+      Log.e(TAG, "Opening action was canceled")
+
+    } catch (throwable: Throwable) {
+      Log.e(TAG, throwable.message.toString()/*"Request was cancelled normally"*/)
+    }
+
+  }
+
   companion object {
     const val TAG = "WearableCommunicator"
   }
+
 }

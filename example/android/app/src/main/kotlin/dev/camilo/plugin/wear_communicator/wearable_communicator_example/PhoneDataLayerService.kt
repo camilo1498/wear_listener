@@ -17,6 +17,7 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
         super.onDataChanged(dataEvents)
     }
 
+
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
