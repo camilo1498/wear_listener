@@ -119,7 +119,8 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
             device.add(mapOf(
               "id" to node.id.toString(),
               "name" to node.displayName.toString(),
-              "connected" to node.isNearby.toString()
+              "connected" to node.isNearby.toString(),
+              "isInstall" to true.toString()
             ))
 
             /** send to method channel **/
@@ -130,7 +131,8 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
           result.success(mapOf(
             "id" to "null",
             "name" to "null",
-            "connected" to "false"
+            "connected" to "false",
+            "isInstall" to false.toString()
           ))
         }
       }).start()
