@@ -347,8 +347,6 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
        val marketUri: String = argument["market_id"].toString()
        var isInstall = false
 
-
-       Log.e("some", argument.toString())
        /** search node into list **/
        for(node in allNodesWithInstallApp!!) {
          if(node.id.toString() == nodeId) {
