@@ -1,13 +1,48 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/route_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wearable_communicator/wearable_communicator.dart';
-import 'package:wearable_communicator_example/wear_response.dart';
+import 'package:wearable_communicator_example/src/data/models/wear_response.dart';
+import 'package:wearable_communicator_example/src/presentation/routes/app_pages.dart';
+import 'package:wearable_communicator_example/src/presentation/routes/app_routes.dart';
 
 void main() {
-  runApp(const MyApp());
+  /// Make sure that the widget are already initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  Paint.enableDithering = true;
+
+  runApp(const MainPage());
 }
+
+class MainPage extends StatelessWidget {
+  const MainPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<OverscrollIndicatorNotification>(
+      onNotification: (overscroll) {
+        overscroll.disallowIndicator();
+        return false;
+      },
+      child: ScreenUtilInit(
+        designSize: const Size(1080, 1920),
+        builder: (_, __) => GetMaterialApp(
+          title: 'Wearable Communicator',
+          theme: ThemeData(
+            primaryColor: Colors.red
+          ),
+          getPages: AppPages.pages,
+          initialRoute: AppRoutes.homePage,
+          defaultTransition: Transition.fadeIn,
+        ),
+      ),
+    );
+  }
+}
+
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -22,8 +57,9 @@ class _MyAppState extends State<MyApp> {
   String message = '';
   String devices = '';
   String key = '';
-  List<WearResponse> allConnectedNodes = [];
-  List<WearResponse> allNodesWithInstalledApp = [];
+  List<WearResponseModel> allConnectedNodes = [];
+  List<WearResponseModel> allNodesWithInstalledApp = [];
+  List<WearResponseModel> allConnectedAndInstalledNodes = [];
   late SharedPreferences prefs;
 
 
@@ -34,6 +70,7 @@ class _MyAppState extends State<MyApp> {
     _controller = TextEditingController();
     _getAllConnectedNodes();
     _getAllNodesWithInstalledApp();
+    _getAllConnectedAndInstalledApp();
     WearableListener.listenForMessage((msg) {
       debugPrint('message $msg');
       WearableCommunicator.sendMessage({
@@ -46,6 +83,7 @@ class _MyAppState extends State<MyApp> {
       debugPrint('flutter paired devices: $msg');
       await _getAllConnectedNodes();
       await _getAllNodesWithInstalledApp();
+      await _getAllConnectedAndInstalledApp();
       setState(() => devices = msg);
     });
   }
@@ -66,9 +104,9 @@ class _MyAppState extends State<MyApp> {
     print(map.toString());
     print('============');
     setState(() {
-      List<WearResponse> localRes = [];
+      List<WearResponseModel> localRes = [];
       map.map((e) {
-        localRes.add(WearResponse.fromJson(Map<String, dynamic>.from(e)));
+        localRes.add(WearResponseModel.fromJson(Map<String, dynamic>.from(e)));
       }).toList();
       allConnectedNodes = localRes;
     });
@@ -80,11 +118,25 @@ class _MyAppState extends State<MyApp> {
     print(map.toString());
     print('============');
     setState(() {
-      List<WearResponse> localRes = [];
+      List<WearResponseModel> localRes = [];
       map.map((e) {
-        localRes.add(WearResponse.fromJson(Map<String, dynamic>.from(e)));
+        localRes.add(WearResponseModel.fromJson(Map<String, dynamic>.from(e)));
       }).toList();
       allNodesWithInstalledApp = localRes;
+    });
+  }
+
+  _getAllConnectedAndInstalledApp()async{
+    final map = await WearableCommunicator.getAllConnectedAndInstalledApp();
+    print('============ connected and installed app');
+    print(map.toString());
+    print('============');
+    setState(() {
+      List<WearResponseModel> localRes = [];
+      map.map((e) {
+        localRes.add(WearResponseModel.fromJson(Map<String, dynamic>.from(e)));
+      }).toList();
+      allConnectedAndInstalledNodes = localRes;
     });
   }
 
@@ -268,9 +320,52 @@ class _MyAppState extends State<MyApp> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('id: ${node.id.toString()}'),
-                            Text('name: ${node.name.toString()}'),
-                            Text('connected: ${node.connected.toString()}'),
+                            Text('id: ${node.id}'),
+                            Text('name: ${node.name}'),
+                            Text('connected: ${node.connected}'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )),
+
+                const SizedBox(height: 30,),
+                Container(
+                    alignment: Alignment.center,
+                    child:const  Text(
+                      "Merged nodes",
+                      style:  TextStyle(
+                          color: Colors.black
+                      ),
+                    )
+                ),
+                if(allConnectedAndInstalledNodes.isNotEmpty)
+                  ...allConnectedAndInstalledNodes.map((node) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 0.1,
+                                blurRadius: 0.1,
+                                offset: const Offset(0, 1)
+                            ),
+                          ]
+                      ),
+                      child: ListTile(
+                        onTap: (){
+                          WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
+                        },
+                        title: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('id: ${node.id}'),
+                            Text('name: ${node.name}'),
+                            Text('connected: ${node.connected}'),
+                            Text("isInstall ${node.isInstall}")
                           ],
                         ),
                       ),

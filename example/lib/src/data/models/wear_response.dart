@@ -4,30 +4,34 @@
 
 import 'dart:convert';
 
-WearResponse wearResponseFromJson(String str) => WearResponse.fromJson(json.decode(str));
+WearResponseModel wearResponseFromJson(String str) => WearResponseModel.fromJson(json.decode(str));
 
-String wearResponseToJson(WearResponse data) => json.encode(data.toJson());
+String wearResponseToJson(WearResponseModel data) => json.encode(data.toJson());
 
-class WearResponse {
+class WearResponseModel {
   String? id;
   String? name;
   bool connected;
+  bool isInstall;
 
-  WearResponse({
+  WearResponseModel({
     this.id,
     this.name,
     this.connected = false,
+    this.isInstall = false
   });
 
-  factory WearResponse.fromJson(Map<String, dynamic> json) => WearResponse(
+  factory WearResponseModel.fromJson(Map<String, dynamic> json) => WearResponseModel(
     id: json["id"] ?? 'no data',
     name: json["name"] ?? 'no data',
     connected: json["connected"] == 'true' ? true : false,
+    isInstall: json["isInstall"] == 'true' ? true : false,
   );
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
     "connected": connected,
+    "isInstall": isInstall
   };
 }

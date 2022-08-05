@@ -31,6 +31,12 @@ class WearableCommunicator {
     return result;
   }
 
+  /// get all paired nodes with app isntalled
+  static getAllConnectedAndInstalledApp() async{
+    final result = await _channel.invokeMethod('getAllConnectedAndInstalledNodes');
+    return result;
+  }
+
   /// open play store in paired node that does not has installed app
   static openPlayStoreInWearable(Map<String, dynamic> message) async{
     final result = await _channel.invokeMethod('openPlayStoreInWearable', message);
@@ -131,6 +137,20 @@ class WearableListener {
           _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
         }
         break;
+
+      case 'getAllConnectedAndInstalledNodes':
+        if (call.arguments["args"] is String) {
+          try {
+            Map? value = json.decode(call.arguments["args"]);
+            _nodeInstalledAppCallbacksById[call.arguments["id"]]!(value);
+          } catch (e) {
+            _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+          }
+        } else {
+          _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+        }
+        break;
+
       default:
         if (kDebugMode) {
           print(

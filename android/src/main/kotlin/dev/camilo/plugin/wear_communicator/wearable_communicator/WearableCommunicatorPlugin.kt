@@ -18,6 +18,9 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.*
 import org.json.JSONObject
+import java.nio.channels.Selector
+import java.util.stream.Collectors
+import kotlin.streams.asStream
 
 class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   ActivityAware, MessageClient.OnMessageReceivedListener,
@@ -64,6 +67,9 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       }
       "getWearableNodeWithInstallApp" -> {
         getNodesWithInstalledApp(result)
+      }
+      "getAllConnectedAndInstalledNodes" -> {
+        getAllPairedAndInstalledNodes(result)
       }
       "sendMessage" -> {
         sendMessage(call, result)
@@ -145,7 +151,6 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   private fun getWearableNode(result: Result) {
     try {
       Thread(Runnable {
-        //getNodesWithInstalledApp(result)
         /** search reachable nodes **/
         allConnectedNodes = Tasks.await(nodeClient.connectedNodes)
 
@@ -177,6 +182,48 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     } catch (ex: Exception){
       Log.d(TAG, "Failed to get node", ex)
     }
+  }
+
+  /** Get all connected nodes and installed all nodes **/
+  private fun getAllPairedAndInstalledNodes(result: Result) {
+   try {
+     Thread(Runnable {
+       /** Get and node data **/
+       allConnectedNodes = Tasks.await(nodeClient.connectedNodes)
+       allNodesWithInstallApp = Tasks.await(capabilityClient.getCapability("wear", CapabilityClient.FILTER_ALL)).nodes
+
+       /** local variables **/
+       val newAllConnectedNodesList = mutableListOf<Map<String, String>>()
+       val newAllInstalledNodesList = mutableListOf<Map<String, String>>()
+
+       /** set new json data structure **/
+       allConnectedNodes!!.forEach { node ->
+         newAllConnectedNodesList.add(mapOf(
+           "id" to node.id.toString(),
+           "name" to node.displayName,
+           "connected" to node.isNearby.toString(),
+           "isInstall" to false.toString()
+         ))
+       }
+       allNodesWithInstallApp!!.forEach { node ->
+         newAllInstalledNodesList.add(mapOf(
+           "id" to node.id.toString(),
+           "name" to node.displayName,
+           "connected" to node.isNearby.toString(),
+           "isInstall" to true.toString()
+         ))
+       }
+
+       /** merge both list into one **/
+       val localNodeList: MutableList<Map<String, String>> = (newAllConnectedNodesList.associateBy { it["id"] } + newAllInstalledNodesList.associateBy{ it["id"]})
+         .values.toMutableList()
+
+       /** send to method channel **/
+       result.success(localNodeList)
+     }).start()
+   } catch (ex:Exception) {
+     Log.d(TAG, "Failed to get node", ex)
+   }
   }
 
   /** Send messaged to wear **/
@@ -279,7 +326,6 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         "connected" to nodes.isNearby.toString()
       ))
     }
-    Log.e("device", devices.nodes.toString())
     /** send to method channel **/
     pairedDevicesListenerIds.forEach { id ->
       channel.invokeMethod("availableNode", hashMapOf(
@@ -342,5 +388,4 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   companion object {
     const val TAG = "WearableCommunicator"
   }
-
 }
