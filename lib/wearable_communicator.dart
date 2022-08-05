@@ -15,8 +15,11 @@ class WearableCommunicator {
   MethodChannel('wearableCommunicator');
 
   /// send message to watch
-  static void sendMessage(Map<String, dynamic> message) async {
-    await _channel.invokeMethod('sendMessage', message);
+  static void sendMessage({String? nodeID, Map<String, dynamic>? data}) async {
+    await _channel.invokeMethod('sendMessage', {
+      "node_id": nodeID,
+      "data": data
+    });
   }
 
   /// get all paired connected nodes

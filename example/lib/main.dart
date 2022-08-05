@@ -73,9 +73,9 @@ class _MyAppState extends State<MyApp> {
     _getAllConnectedAndInstalledApp();
     WearableListener.listenForMessage((msg) {
       debugPrint('message $msg');
-      WearableCommunicator.sendMessage({
-        "text": msg
-      });
+      WearableCommunicator.sendMessage(
+        nodeID: "",
+        data: {"text": msg});
       setState(() => message = msg);
     });
 
@@ -155,8 +155,7 @@ class _MyAppState extends State<MyApp> {
             )
           ],
         ),
-        body: allConnectedNodes.isNotEmpty
-            ? Center(
+        body: Center(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
@@ -209,7 +208,9 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () {
                     primaryFocus!.unfocus(disposition: UnfocusDisposition.scope);
                     if(allConnectedNodes[0].connected){
-                      WearableCommunicator.sendMessage({
+                      WearableCommunicator.sendMessage(
+                         nodeID: "",
+                          data: {
                         "text": Random.secure().nextDouble().toString()
                       });
                     }
@@ -375,9 +376,6 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         )
-            : const Center(
-          child: CircularProgressIndicator(),
-        ),
       ),
     );
   }

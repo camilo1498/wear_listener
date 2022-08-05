@@ -232,24 +232,25 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       result.success(null)
     } else {
       try {
-        val argument = call.arguments<HashMap<String, Any>>()
-        val client = Wearable.getMessageClient(activity!!)
-        /** get available nodes **/
-        Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
-          /** send to method channel **/
-          nodes.forEach { node ->
+        Thread(Runnable {
+          val argument = call.arguments<HashMap<String, Any>>()
+          val client = Wearable.getMessageClient(activity!!)
+          val nodeId: String = argument!!["node_id"].toString()
+          /** get available nodes **/
+          Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
+            /** send to method channel **/
             val json = (argument as Map<*, *>?)?.let { JSONObject(it).toString() }
-            client.sendMessage(node.id, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
-              Log.d(TAG,"sent message: $json to ${node.displayName}")
+            client.sendMessage(nodeId, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
+              Log.d(TAG,"sent message: $json to $nodeId")
             }
+            result.success(null)
+
+            /** Error handler **/
+          }.addOnFailureListener { ex ->
+            result.error(ex.message!!, ex.localizedMessage, ex)
           }
-          result.success(null)
 
-          /** Error handler **/
-        }.addOnFailureListener { ex ->
-          result.error(ex.message!!, ex.localizedMessage, ex)
-        }
-
+        }).start()
       } catch (ex: Exception) {
         Log.d(TAG, "Failed to send message", ex)
       }
