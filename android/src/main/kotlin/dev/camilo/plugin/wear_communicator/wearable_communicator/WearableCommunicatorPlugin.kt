@@ -340,47 +340,49 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   /** Open wearable play store **/
   private fun openPlayStoreOnWearDevicesWithoutApp(call: MethodCall, result: Result) {
     try {
-      /** Local variables **/
-      val argument = call.arguments<HashMap<String, Any>>()
-      val nodeId: String = argument!!.map { msg -> msg.value}[0].toString()
-      var isInstall = false
+     Thread(Runnable {
+       /** Local variables **/
+       val argument = call.arguments<HashMap<String, Any>>()
+       val nodeId: String = argument!!["node_id"].toString()
+       val marketUri: String = argument["market_id"].toString()
+       var isInstall = false
 
-      /** search node into list **/
-      for(node in allNodesWithInstallApp!!) {
-        if(node.id.toString() == nodeId) {
-          isInstall = true
-        }
-      }
 
-      /** validate if app is install in wearable **/
-      if(isInstall) {
-        Log.e(TAG, "This device already has an installed app")
-        result.success(mapOf(
-          "success" to "error",
-          "message" to "This device already has an installed app"
-        ))
-      } else {
-        /** Initialize intent **/
-        val intent = Intent(Intent.ACTION_VIEW)
-          .addCategory(Intent.CATEGORY_BROWSABLE)
-          .setData(Uri.parse("market://details?id=wearablesoftware.wearspotifyplayer&hl=es_CO&gl=US"))
+       Log.e("some", argument.toString())
+       /** search node into list **/
+       for(node in allNodesWithInstallApp!!) {
+         if(node.id.toString() == nodeId) {
+           isInstall = true
+         }
+       }
 
-        /** Open play store in wearOS **/
-        remoteActivityHelper.startRemoteActivity(
-          targetIntent = intent,
-          targetNodeId = nodeId
-        )
-        result.success(mapOf(
-          "success" to "error",
-          "message" to "opening in wearable"
-        ))
-        Log.d(TAG, "opening in wearable")
-      }
+       /** validate if app is install in wearable **/
+       if(isInstall) {
+         Log.e(TAG, "This device already has an installed app")
+         result.success(mapOf(
+           "success" to "error",
+           "message" to "This device already has an installed app"
+         ))
+       } else {
+         /** Open play store in wearOS **/
+         remoteActivityHelper.startRemoteActivity(
+           targetIntent = Intent(Intent.ACTION_VIEW)
+             .addCategory(Intent.CATEGORY_BROWSABLE)
+             .setData(Uri.parse("market://details?id=${marketUri}&hl=es_CO&gl=US")),
+           targetNodeId = nodeId
+         )
+         result.success(mapOf(
+           "success" to "error",
+           "message" to "opening in wearable"
+         ))
+         Log.d(TAG, "opening in wearable")
+       }
+     }).start()
     } catch (cancellationException: CancellationException) {
       Log.e(TAG, "Opening action was canceled")
 
     } catch (throwable: Throwable) {
-      Log.e(TAG, throwable.message.toString()/*"Request was cancelled normally"*/)
+      Log.e(TAG, throwable.message.toString())
     }
 
   }

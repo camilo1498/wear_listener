@@ -38,8 +38,8 @@ class HomeController extends GetxController {
     }
   }
 
-  openPlayStoreOnWearable({required String id}) {
-    WearableCommunicator.openPlayStoreInWearable({"node_id": id});
+  openPlayStoreOnWearable({required String id}) async{
+    await WearableCommunicator.openPlayStoreInWearable(nodeId: id, marketId: "wearablesoftware.wearspotifyplayer");
   }
 
 }

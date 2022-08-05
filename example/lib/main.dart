@@ -314,7 +314,7 @@ class _MyAppState extends State<MyApp> {
                       ),
                       child: ListTile(
                         onTap: (){
-                          WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
+                         // WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
                         },
                         title: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -356,7 +356,7 @@ class _MyAppState extends State<MyApp> {
                       ),
                       child: ListTile(
                         onTap: (){
-                          WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
+                        //  WearableCommunicator.openPlayStoreInWearable({"node_id": node.id.toString()});
                         },
                         title: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
