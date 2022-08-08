@@ -161,7 +161,23 @@ class HomePage extends StatelessWidget {
 
                       /// title
                       Text(
-                        _.receivedWearMessage,
+                        "path = ${_.messageReceived != null ? _.messageReceived!.path : ''}",
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400
+                        ),
+                      ),
+                      Text(
+                        "message = ${_.messageReceived != null ? _.messageReceived!.data : ''}",
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400
+                        ),
+                      ),
+                      Text(
+                        "size = ${_.messageReceived != null ? _.messageReceived!.size : ''}",
                         style: const TextStyle(
                             color: Colors.black,
                             fontSize: 13,

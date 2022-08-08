@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +21,7 @@ class HomeController extends GetxController {
     });
 
     WearableListener.listenForMessage((msg) {
-      receivedWearMessage = msg;
+      messageReceived = MessageReceivedResponseModel.fromJson(jsonDecode(msg));
       update(['home_page']);
     });
   }
@@ -33,6 +35,7 @@ class HomeController extends GetxController {
 
   /// instances
   late SharedPreferences _prefs;
+  MessageReceivedResponseModel? messageReceived;
 
   /// variables
   List<WearResponseModel> allConnectedAndInstalledNodes = [];
@@ -42,7 +45,6 @@ class HomeController extends GetxController {
   String messageText = "";
   String savedMessage = "";
   String savedNodeId = "";
-  String receivedWearMessage = "";
 
   saveMessageToLocalStorage() async{
     if(messageText.isNotEmpty) {
@@ -55,6 +57,7 @@ class HomeController extends GetxController {
   sendTokenToWear() {
     if(savedNodeId.isNotEmpty && savedMessage.isNotEmpty) {
       WearableCommunicator.sendMessage(
+        path: "/token",
           nodeID: savedNodeId,
           data: {
             "text": savedMessage

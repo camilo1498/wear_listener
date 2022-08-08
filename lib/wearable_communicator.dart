@@ -1,10 +1,11 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'wearable_communicator_platform_interface.dart';
+
+export './models/message_received_response_model.dart';
 
 class WearableCommunicator {
   Future<String?> getPlatformVersion() {
@@ -15,8 +16,9 @@ class WearableCommunicator {
   MethodChannel('wearableCommunicator');
 
   /// send message to watch
-  static void sendMessage({String? nodeID, Map<String, dynamic>? data}) async {
+  static void sendMessage({required String path, required String nodeID, required Map<String, dynamic> data}) async {
     await _channel.invokeMethod('sendMessage', {
+      "path": path,
       "node_id": nodeID,
       "data": data
     });
@@ -78,6 +80,7 @@ class WearableListener {
         if (call.arguments["args"] is String) {
           try {
             Map? value = json.decode(call.arguments["args"]);
+
             _messageCallbacksById[call.arguments["id"]]!(value);
           } catch (e) {
             _messageCallbacksById[call.arguments["id"]]!(

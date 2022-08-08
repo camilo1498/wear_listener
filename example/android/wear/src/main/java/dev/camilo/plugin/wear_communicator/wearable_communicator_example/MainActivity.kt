@@ -100,14 +100,16 @@ class MainActivity : ComponentActivity(),
 
     override fun onMessageReceived(message: MessageEvent) {
         try {
-            /** decode qr token to base 64 **/
-            val imageByte = Base64.decode(message.data, 0)
-            Log.e("message", message.data.decodeToString())
+         if(message.path == "/token") {
+             /** decode qr token to base 64 **/
+             val imageByte = Base64.decode(message.data, 0)
+             Log.e("message", "message")
 
-            /** set QR to bitmap **/
-            GlobalScope.launch(Dispatchers.Main) {
-                qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
-            }
+             /** set QR to bitmap **/
+             GlobalScope.launch(Dispatchers.Main) {
+                 qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
+             }
+         }
         } catch (e: Exception) {
         }
     }

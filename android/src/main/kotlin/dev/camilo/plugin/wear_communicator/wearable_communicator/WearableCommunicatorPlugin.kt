@@ -236,9 +236,13 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
           val argument = call.arguments<HashMap<String, Any>>()
           val client = Wearable.getMessageClient(activity!!)
           val nodeId: String = argument!!["node_id"].toString()
+          val path: String = argument["path"].toString()
+          val data = argument["data"]
+          Log.e("path", path)
+
           /** send to method channel **/
-          val json = (argument as Map<*, *>?)?.let { JSONObject(it).toString() }
-          client.sendMessage(nodeId, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
+          val json = (data as Map<*, *>?)?.let { JSONObject(it).toString() }
+          client.sendMessage(nodeId, path, json!!.toByteArray()).addOnSuccessListener {
             Log.d(TAG,"sent message: $json to $nodeId")
           }
           result.success(null)
@@ -301,11 +305,14 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     super.onMessageReceived(message)
     try {
       /** send to method channel **/
-      val data = String(message.data)
       messageListenerIds.forEach { id ->
         channel.invokeMethod("messageReceived", hashMapOf(
           "id" to id,
-          "args" to data
+          "args" to JSONObject(mapOf(
+            "path" to message.path,
+            "size" to message.data.size.toString(),
+            "data" to String(message.data)
+          )).toString()
         ))
       }
     } catch (e: Exception) {
