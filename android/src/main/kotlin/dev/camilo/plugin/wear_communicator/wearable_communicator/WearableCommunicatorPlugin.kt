@@ -236,19 +236,12 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
           val argument = call.arguments<HashMap<String, Any>>()
           val client = Wearable.getMessageClient(activity!!)
           val nodeId: String = argument!!["node_id"].toString()
-          /** get available nodes **/
-          Wearable.getNodeClient(activity!!).connectedNodes.addOnSuccessListener { nodes ->
-            /** send to method channel **/
-            val json = (argument as Map<*, *>?)?.let { JSONObject(it).toString() }
-            client.sendMessage(nodeId, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
-              Log.d(TAG,"sent message: $json to $nodeId")
-            }
-            result.success(null)
-
-            /** Error handler **/
-          }.addOnFailureListener { ex ->
-            result.error(ex.message!!, ex.localizedMessage, ex)
+          /** send to method channel **/
+          val json = (argument as Map<*, *>?)?.let { JSONObject(it).toString() }
+          client.sendMessage(nodeId, "/MessageChannel", json!!.toByteArray()).addOnSuccessListener {
+            Log.d(TAG,"sent message: $json to $nodeId")
           }
+          result.success(null)
 
         }).start()
       } catch (ex: Exception) {
@@ -305,37 +298,48 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
 
   /** Listen received messages **/
   override fun onMessageReceived(message: MessageEvent) {
-    /** send to method channel **/
-    val data = String(message.data)
-    messageListenerIds.forEach { id ->
-      channel.invokeMethod("messageReceived", hashMapOf(
-        "id" to id,
-        "args" to data
-      ))
+    super.onMessageReceived(message)
+    try {
+      /** send to method channel **/
+      val data = String(message.data)
+      messageListenerIds.forEach { id ->
+        channel.invokeMethod("messageReceived", hashMapOf(
+          "id" to id,
+          "args" to data
+        ))
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, e.message.toString())
     }
   }
 
   /** Listen wear connected nodes **/
   override fun onCapabilityChanged(devices: CapabilityInfo) {
     super.onCapabilityChanged(devices)
-    /** save available nodes **/
-    val device = mutableListOf<Map<String, String>>()
-    devices.nodes.forEach{ nodes ->
-      device.add(mapOf(
-        "id" to nodes.id.toString(),
-        "name" to nodes.displayName.toString(),
-        "connected" to nodes.isNearby.toString()
-      ))
-    }
-    /** send to method channel **/
-    pairedDevicesListenerIds.forEach { id ->
-      channel.invokeMethod("availableNode", hashMapOf(
-        "id" to id,
-        "args" to device.toString()
-      ))
+    try {
+      Thread(Runnable {
+        /** save available nodes **/
+        val device = mutableListOf<Map<String, String>>()
+        devices.nodes.forEach{ nodes ->
+          device.add(mapOf(
+            "id" to nodes.id.toString(),
+            "name" to nodes.displayName.toString(),
+            "connected" to nodes.isNearby.toString()
+          ))
+        }
+        /** send to method channel **/
+        pairedDevicesListenerIds.forEach { id ->
+          channel.invokeMethod("availableNode", hashMapOf(
+            "id" to id,
+            "args" to device.toString()
+          ))
 
-    }
+        }
 
+      }).start()
+    } catch (e: Exception) {
+      Log.e(TAG, e.message.toString())
+    }
   }
 
   /** Open wearable play store **/
@@ -367,7 +371,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
          remoteActivityHelper.startRemoteActivity(
            targetIntent = Intent(Intent.ACTION_VIEW)
              .addCategory(Intent.CATEGORY_BROWSABLE)
-             .setData(Uri.parse("market://details?id=${marketUri}&hl=es_CO&gl=US")),
+             .setData(Uri.parse("market://details?id=${marketUri}")),
            targetNodeId = nodeId
          )
          result.success(mapOf(

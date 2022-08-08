@@ -10,14 +10,25 @@ class HomeController extends GetxController {
   void onInit() async{
     super.onInit();
     _prefs = await SharedPreferences.getInstance();
-    savedMessage = _prefs.getString('saved_message')!;
-    savedNodeId = _prefs.getString('saved_node_id')!;
-    getAllConnectedAndInstalledApp();
-
+    savedMessage = _prefs.getString('saved_message') ?? '';
+    savedNodeId = _prefs.getString('saved_node_id') ?? '';
     /// listen realtime connection
     WearableListener.listenAvailableNodes((msg) async{
+      /// get nodes
       await getAllConnectedAndInstalledApp();
     });
+
+    WearableListener.listenForMessage((msg) {
+      receivedWearMessage = msg;
+      update(['home_page']);
+    });
+  }
+
+  @override
+  void onReady() async{
+    super.onReady();
+    /// get nodes
+    await getAllConnectedAndInstalledApp();
   }
 
   /// instances
@@ -31,16 +42,23 @@ class HomeController extends GetxController {
   String messageText = "";
   String savedMessage = "";
   String savedNodeId = "";
+  String receivedWearMessage = "";
 
   saveMessageToLocalStorage() async{
-    if(savedNodeId.isNotEmpty && messageText.isNotEmpty) {
+    if(messageText.isNotEmpty) {
       _prefs.setString('saved_message', messageText);
+      savedMessage = messageText;
       update(['home_page']);
+    }
+  }
+
+  sendTokenToWear() {
+    if(savedNodeId.isNotEmpty && savedMessage.isNotEmpty) {
       WearableCommunicator.sendMessage(
-        nodeID: savedNodeId,
-        data: {
-          "text": savedMessage
-        }
+          nodeID: savedNodeId,
+          data: {
+            "text": savedMessage
+          }
       );
     }
   }
@@ -48,6 +66,12 @@ class HomeController extends GetxController {
   onChangeTextField(String text) {
     messageText = text;
     update(['home_page']);
+  }
+
+  selectDevice({required String id}) {
+    _prefs.setString("saved_node_id", id);
+    savedNodeId = _prefs.getString('saved_node_id').toString();
+    update(["home_page"]);
   }
 
   getAllConnectedAndInstalledApp() async{
@@ -59,6 +83,7 @@ class HomeController extends GetxController {
       map.map((e) {
         localRes.add(WearResponseModel.fromJson(Map<String, dynamic>.from(e)));
       }).toList();
+
       allConnectedAndInstalledNodes = localRes;
       loading = false;
       update(["home_page"]);

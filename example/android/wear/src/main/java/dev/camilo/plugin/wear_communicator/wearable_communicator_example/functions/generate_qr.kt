@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.android.gms.wearable.Wearable
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.MainActivity
 import kotlin.random.Random
+import kotlin.random.nextInt
 
 class GenerateQrCode {
 
@@ -17,7 +18,7 @@ class GenerateQrCode {
                 /** send request by path **/
                 messageClient.sendMessage(
                         it.id,
-                        "/token", "request_token".toByteArray()
+                        "/token", Random.nextInt(126565653).toString().toByteArray()
                 ).addOnSuccessListener {
                     Log.d("Wear", "Sent message to phone")
                 }

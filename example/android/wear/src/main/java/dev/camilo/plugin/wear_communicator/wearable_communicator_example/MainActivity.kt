@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity(),
         try {
             /** decode qr token to base 64 **/
             val imageByte = Base64.decode(message.data, 0)
+            Log.e("message", message.data.decodeToString())
 
             /** set QR to bitmap **/
             GlobalScope.launch(Dispatchers.Main) {

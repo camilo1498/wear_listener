@@ -34,7 +34,7 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
                 }
 
                 /** Generate QR Code token **/
-                val qrCode = GenerateQrCode().getQrCodeBitmap("0x01000000469A4DA9932B403EE35BA88CF41DF69152447E35E97282F28EC33B879393EC3E715C8C983A0E96275FD6C3D90366F1D5630EBD9EB1C786CAC718185957FFB3C89D878681608CA038196FA1BFAB3B27944D42D75C3429293C")
+                val qrCode = GenerateQrCode().getQrCodeBitmap("token")
 
                 /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)

@@ -31,9 +31,10 @@ class MainPage extends StatelessWidget {
         designSize: const Size(1080, 1920),
         builder: (_, __) => GetMaterialApp(
           title: 'Wearable Communicator',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            primaryColor: Colors.red
-          ),
+              primarySwatch: Colors.red,
+              useMaterial3: true),
           getPages: AppPages.pages,
           initialRoute: AppRoutes.homePage,
           defaultTransition: Transition.fadeIn,
