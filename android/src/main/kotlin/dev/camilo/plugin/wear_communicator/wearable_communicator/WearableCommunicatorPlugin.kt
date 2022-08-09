@@ -18,9 +18,6 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.*
 import org.json.JSONObject
-import java.nio.channels.Selector
-import java.util.stream.Collectors
-import kotlin.streams.asStream
 
 class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   ActivityAware, MessageClient.OnMessageReceivedListener,
@@ -41,6 +38,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   private val pairedDevicesListenerIds = mutableListOf<Int>()
   private var allNodesWithInstallApp: Set<Node>? = null
   private var allConnectedNodes: List<Node>? = null
+  private val dataListenerIds = mutableListOf<Int>()
 
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -87,9 +85,25 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
       "openPlayStoreInWearable" -> {
         openPlayStoreOnWearDevicesWithoutApp(call, result)
       }
+      "sentDataToWear" -> {
+        sendDataToWear(call)
+      }
+      "listenDatalayer" -> {
+        registerDataLayerListener(call)
+      }
       else -> {
         result.notImplemented()
       }
+    }
+  }
+
+  /** Datalayer listener **/
+  private fun registerDataLayerListener(call: MethodCall) {
+    try {
+      val id = call.arguments<Int>()
+      dataListenerIds.add(id!!)
+    } catch (ex: Exception) {
+      Log.e(TAG, ex.localizedMessage!!, ex)
     }
   }
 
@@ -351,6 +365,31 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
     }
   }
 
+  override fun onDataChanged(dataChanged: DataEventBuffer) {
+    super.onDataChanged(dataChanged)
+    try {
+        Thread(Runnable {
+          dataChanged.forEach { event ->
+            if(event.type == DataEvent.TYPE_CHANGED) {
+              val datamap = DataMapItem.fromDataItem(event.dataItem).dataMap
+              val map = hashMapOf<String, Any>()
+              for (key in datamap.keySet()) {
+                map[key] = datamap.get(key)!!
+              }
+              dataListenerIds.forEach { id ->
+                channel.invokeMethod("dataReceived", hashMapOf(
+                  "id" to id,
+                  "args" to map
+                ))
+              }
+            }
+          }
+        }).start()
+    } catch (e: Exception) {
+      Log.e(TAG, e.message.toString())
+    }
+  }
+
   /** Open wearable play store **/
   private fun openPlayStoreOnWearDevicesWithoutApp(call: MethodCall, result: Result) {
     try {
@@ -399,7 +438,66 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
 
   }
 
+  private fun sendDataToWear(call: MethodCall) {
+    try {
+      val data = call.argument<HashMap<String, Any>>("data") ?: return
+      Log.d(TAG, data.toString())
+      val name = call.argument<String>("path") ?: return
+      val request = PutDataMapRequest.create(name).run {
+        loop@ for ((key, value) in data) {
+          when(value) {
+            is String -> {
+              dataMap.putString(key, value)
+            }
+            is Int -> dataMap.putInt(key, value)
+            is Float -> dataMap.putFloat(key, value)
+            is Double -> dataMap.putDouble(key, value)
+            is Long -> dataMap.putLong(key, value)
+            is Boolean -> dataMap.putBoolean(key, value)
+            is List<*> -> {
+              if (value.isEmpty()) continue@loop
+              value.asArrayListOfType<Int>()?.let {
+                dataMap.putIntegerArrayList(key, it)
+              }
+              value.asArrayListOfType<String>()?.let {
+                dataMap.putStringArrayList(key, it)
+              }
+              value.asArrayOfType<Float>()?.let {
+                dataMap.putFloatArray(key, it.toFloatArray())
+              }
+              value.asArrayOfType<Long>()?.let {
+                dataMap.putLongArray(key, it.toLongArray())
+              }
+            }
+            else -> {
+              Log.d(TAG, "could not translate value of type ${value.javaClass.name}")
+            }
+          }
+        }
+        asPutDataRequest()
+      }
+      Wearable.getDataClient(activity!!).putDataItem(request).addOnSuccessListener {
+        Log.d(TAG, "Set data on wear")
+      }
+    } catch (ex: Exception) {
+      Log.e(TAG, "Failed to send message", ex)
+    }
+  }
+
   companion object {
     const val TAG = "WearableCommunicator"
   }
 }
+
+
+inline fun <reified T> List<*>.asArrayListOfType(): ArrayList<T>? =
+  if (all { it is T })
+    @Suppress("UNCHECKED_CAST")
+    this as ArrayList<T> else
+    null
+
+inline fun <reified T> List<*>.asArrayOfType(): Array<T>? =
+  if (all { it is T })
+    @Suppress("UNCHECKED_CAST")
+    this as Array<T> else
+    null

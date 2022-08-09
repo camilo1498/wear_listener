@@ -42,6 +42,13 @@ class WearableCommunicator {
     return result;
   }
 
+  static void sentDataToWear(String path, Map<String, dynamic> data) async {
+    if (!path.startsWith("/")) {
+      path = "/$path";
+    }
+    await _channel.invokeListMethod('sentDataToWear', {"path": path, "data": data});
+  }
+
   /// open play store in paired node that does not has installed app
   static openPlayStoreInWearable({String? nodeId, String? marketId}) async{
     final result = await _channel.invokeMethod('openPlayStoreInWearable',
@@ -65,6 +72,7 @@ class WearableListener {
   static final Map<int, MultiUseCallback> _nodeInstalledAppCallbacksById = {};
   static final Map<int, MultiUseCallback> _pairedDevicesById = {};
   static final Map<int, MultiUseCallback> _availableNodesById = {};
+  static final Map<int, MultiUseCallback> _dataCallbacksById = {};
 
 
   /// initialize method channel
@@ -170,6 +178,18 @@ class WearableListener {
           _nodeInstalledAppCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
         }
         break;
+      case 'dataReceived' :
+        if (call.arguments["args"] is String) {
+          try {
+            Map? value = json.decode(call.arguments["args"]);
+            _dataCallbacksById[call.arguments["id"]]!(value);
+          } catch (exeption) {
+            _dataCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+          }
+        } else {
+          _dataCallbacksById[call.arguments["id"]]!(call.arguments["args"]);
+        }
+        break;
 
       default:
         if (kDebugMode) {
@@ -196,4 +216,12 @@ class WearableListener {
     _availableNodesById[currentListenerId] = callback;
     await _channel.invokeMethod("listenDevices", currentListenerId);
   }
+
+  static Future<void> listenForDataLayer(MultiUseCallback callback) async {
+    _channel.setMethodCallHandler(_methodCallHandler);
+    int currentListenerId = _nextCallbackId++;
+    _dataCallbacksById[currentListenerId] = callback;
+    await _channel.invokeMethod("listenDatalayer", currentListenerId);
+  }
+
 }
