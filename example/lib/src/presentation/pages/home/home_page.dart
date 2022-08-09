@@ -121,6 +121,10 @@ class HomePage extends StatelessWidget {
                             title: 'Open wear activity',
                             onTap: _.openWearActivity,
                           ),
+                          ButtonWidget(
+                            title: 'send to datalayer',
+                            onTap: _.sendToDatalayer,
+                          ),
                         ],
                       ),
                       60.verticalSpace,

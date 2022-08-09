@@ -340,26 +340,23 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   override fun onCapabilityChanged(devices: CapabilityInfo) {
     super.onCapabilityChanged(devices)
     try {
-      Thread(Runnable {
-        /** save available nodes **/
-        val device = mutableListOf<Map<String, String>>()
-        devices.nodes.forEach{ nodes ->
-          device.add(mapOf(
-            "id" to nodes.id.toString(),
-            "name" to nodes.displayName.toString(),
-            "connected" to nodes.isNearby.toString()
-          ))
-        }
-        /** send to method channel **/
-        pairedDevicesListenerIds.forEach { id ->
-          channel.invokeMethod("availableNode", hashMapOf(
-            "id" to id,
-            "args" to device.toString()
-          ))
+      /** save available nodes **/
+      val device = mutableListOf<Map<String, String>>()
+      devices.nodes.forEach{ nodes ->
+        device.add(mapOf(
+          "id" to nodes.id.toString(),
+          "name" to nodes.displayName.toString(),
+          "connected" to nodes.isNearby.toString()
+        ))
+      }
+      /** send to method channel **/
+      pairedDevicesListenerIds.forEach { id ->
+        channel.invokeMethod("availableNode", hashMapOf(
+          "id" to id,
+          "args" to device.toString()
+        ))
 
-        }
-
-      }).start()
+      }
     } catch (e: Exception) {
       Log.e(TAG, e.message.toString())
     }
@@ -368,23 +365,21 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   override fun onDataChanged(dataChanged: DataEventBuffer) {
     super.onDataChanged(dataChanged)
     try {
-        Thread(Runnable {
-          dataChanged.forEach { event ->
-            if(event.type == DataEvent.TYPE_CHANGED) {
-              val datamap = DataMapItem.fromDataItem(event.dataItem).dataMap
-              val map = hashMapOf<String, Any>()
-              for (key in datamap.keySet()) {
-                map[key] = datamap.get(key)!!
-              }
-              dataListenerIds.forEach { id ->
-                channel.invokeMethod("dataReceived", hashMapOf(
-                  "id" to id,
-                  "args" to map
-                ))
-              }
-            }
+      dataChanged.forEach { event ->
+        if(event.type == DataEvent.TYPE_CHANGED) {
+          val datamap = DataMapItem.fromDataItem(event.dataItem).dataMap
+          val map = hashMapOf<String, Any>()
+          for (key in datamap.keySet()) {
+            map[key] = datamap.get(key)!!
           }
-        }).start()
+          dataListenerIds.forEach { id ->
+            channel.invokeMethod("dataReceived", hashMapOf(
+              "id" to id,
+              "args" to map
+            ))
+          }
+        }
+      }
     } catch (e: Exception) {
       Log.e(TAG, e.message.toString())
     }

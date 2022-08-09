@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity(),
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
+        Log.d("Wear Data Changed", dataEvents.toString())
         /** listen data layer changes **/
         dataEvents.forEach { event ->
             if (event.type == DataEvent.TYPE_CHANGED) {
@@ -122,6 +123,7 @@ class MainActivity : ComponentActivity(),
             }
          }
         } catch (e: Exception) {
+            Log.e("Wear", e.message.toString())
         }
     }
 

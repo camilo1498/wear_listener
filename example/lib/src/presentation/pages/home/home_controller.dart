@@ -46,6 +46,17 @@ class HomeController extends GetxController {
   String savedMessage = "";
   String savedNodeId = "";
 
+  sendToDatalayer() async{
+    WearableCommunicator.sentDataToWear("message", {
+      "text": "test",
+      "integerValue": 1,
+      "intList": [1, 2, 3],
+      "stringList": ["one", "two", "three"],
+      "floatList": [1.0, 2.4, 3.6],
+      "longList": []
+    });
+  }
+
   openWearActivity() async{
     WearableCommunicator.sendMessage(
         path: "/start-sessions_activity",
