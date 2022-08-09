@@ -4,7 +4,6 @@ import android.util.Log
 import com.google.android.gms.wearable.Wearable
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.MainActivity
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 class GenerateQrCode {
 

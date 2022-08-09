@@ -46,6 +46,16 @@ class HomeController extends GetxController {
   String savedMessage = "";
   String savedNodeId = "";
 
+  openWearActivity() async{
+    WearableCommunicator.sendMessage(
+        path: "/start-sessions_activity",
+        nodeID: savedNodeId,
+        data: {
+          "text": savedMessage
+        }
+    );
+  }
+
   saveMessageToLocalStorage() async{
     if(messageText.isNotEmpty) {
       _prefs.setString('saved_message', messageText);

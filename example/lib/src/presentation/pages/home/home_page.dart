@@ -111,6 +111,18 @@ class HomePage extends StatelessWidget {
                           ),
                         ],
                       ),
+                      20.verticalSpace,
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ButtonWidget(
+                            title: 'Open wear activity',
+                            onTap: _.openWearActivity,
+                          ),
+                        ],
+                      ),
                       60.verticalSpace,
 
                       /// title

@@ -2,6 +2,7 @@
 
 package dev.camilo.plugin.wear_communicator.wearable_communicator_example
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.widgets.ProgressIndicatorWidget
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import com.google.android.gms.wearable.*
 import dev.camilo.plugin.wear_communicator.wearable_communicator_example.functions.GenerateQrCode
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -109,6 +111,15 @@ class MainActivity : ComponentActivity(),
              GlobalScope.launch(Dispatchers.Main) {
                  qrCode.value = BitmapFactory.decodeByteArray(imageByte, 0, imageByte.size)
              }
+         } else if(message.path == "/start-sessions_activity"){
+             Log.e("message", String(message.data))
+            if(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                this.onDestroy()
+                startActivity(
+                    Intent(this, SessionActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
          }
         } catch (e: Exception) {
         }
@@ -125,6 +136,7 @@ class MainActivity : ComponentActivity(),
         /** listen changes **/
         Wearable.getMessageClient(this).addListener(this)
         Wearable.getDataClient(this).addListener(this)
+        counter.start()
     }
 
     /** count down function **/

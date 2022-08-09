@@ -34,6 +34,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
   private lateinit var capabilityClient: CapabilityClient
   private lateinit var remoteActivityHelper: RemoteActivityHelper
   private lateinit var nodeClient: NodeClient
+  private lateinit var dataClient: DataClient
 
   /** variables **/
   private val messageListenerIds = mutableListOf<Int>()
@@ -52,6 +53,7 @@ class WearableCommunicatorPlugin: FlutterPlugin, MethodCallHandler,
         remoteActivityHelper = RemoteActivityHelper(context)
         capabilityClient = Wearable.getCapabilityClient(context)
         nodeClient = Wearable.getNodeClient(context)
+        dataClient = Wearable.getDataClient(context)
       }
     }
   }
