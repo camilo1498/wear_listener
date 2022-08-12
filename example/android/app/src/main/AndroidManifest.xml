@@ -68,7 +68,7 @@
                 <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
                 <data
                     android:host="*"
-                    android:pathPrefix="/count"
+                    android:pathPrefix="/dataClient"
                     android:scheme="wear" />
             </intent-filter>
             <intent-filter>

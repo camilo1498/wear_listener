@@ -47,13 +47,12 @@ class HomeController extends GetxController {
   String savedNodeId = "";
 
   sendToDatalayer() async{
-    WearableCommunicator.sentDataToWear("message", {
-      "text": "test",
-      "integerValue": 1,
-      "intList": [1, 2, 3],
-      "stringList": ["one", "two", "three"],
-      "floatList": [1.0, 2.4, 3.6],
-      "longList": []
+    WearableCommunicator.sentDataToWear("dataClient", {
+      "image": "test",
+      "title": "title",
+      "duration": "100",
+      "repeats": "10",
+      "num_exercises": "3",
     });
   }
 
@@ -78,7 +77,7 @@ class HomeController extends GetxController {
   sendTokenToWear() {
     if(savedNodeId.isNotEmpty && savedMessage.isNotEmpty) {
       WearableCommunicator.sendMessage(
-        path: "/token",
+          path: "/token",
           nodeID: savedNodeId,
           data: {
             "text": savedMessage

@@ -3,9 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/route_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wearable_communicator/wearable_communicator.dart';
-import 'package:wearable_communicator_example/src/data/models/wear_response.dart';
 import 'package:wearable_communicator_example/src/presentation/routes/app_pages.dart';
 import 'package:wearable_communicator_example/src/presentation/routes/app_routes.dart';
 
