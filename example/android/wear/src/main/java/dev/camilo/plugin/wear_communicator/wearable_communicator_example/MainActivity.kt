@@ -40,7 +40,6 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     override fun onCreate(savedInstanceState: Bundle?) {
         lifecycleScope.launch {
             clientDataViewModel.sendRequestToPhone(this@MainActivity)
-            counter.start()
             Handler().postDelayed({
                 canCount.value = true
                 counter.start()

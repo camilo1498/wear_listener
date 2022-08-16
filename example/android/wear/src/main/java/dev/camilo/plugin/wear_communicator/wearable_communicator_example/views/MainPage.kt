@@ -30,25 +30,25 @@ fun MainPage(
         modifier = Modifier.background(color = Color.White)
     ) {
         ProgressIndicatorWidget(textValue = timer!!) {
-            Box(
-                modifier = Modifier
-                    .size(188.dp)
-                    .wrapContentSize(Alignment.Center)
-                    .padding(start = 1.dp, top = 1.dp)
-                    .clip(shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if(image == null) {
-                    Image(
-                        painterResource(id = dev.camilo.plugin.wear_communicator.wearable_communicator_example.R.drawable.common_full_open_on_phone),
-                        contentDescription = stringResource(
-                            id = dev.camilo.plugin.wear_communicator.wearable_communicator_example.R.string.photo_placeholder,
-                        ),
-                        modifier = Modifier.fillMaxSize().background(color = Color.Transparent),
-                        contentScale = ContentScale.Inside,
-                        colorFilter = ColorFilter.tint(color = Color.Black)
+            if(image == null) {
+                Box(
+                    modifier = Modifier.size(45.dp)
+                        .padding(start = 1.dp, top = 1.dp)
+                        .wrapContentSize(Alignment.Center)
+                ) {
+                    CircularProgressIndicator(
+                        indicatorColor = Color(0xFFE7662B)
                     )
-                } else {
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(188.dp)
+                        .wrapContentSize(Alignment.Center)
+                        .padding(start = 1.dp, top = 1.dp)
+                        .clip(shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ){
                     Image(
                         image.asImageBitmap(),
                         contentDescription = stringResource(

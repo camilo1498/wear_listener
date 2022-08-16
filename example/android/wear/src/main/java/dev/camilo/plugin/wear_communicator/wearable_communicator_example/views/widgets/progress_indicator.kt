@@ -124,7 +124,7 @@ fun CircularProgressbar(
 
             /** progress bar **/
             drawArc(
-                color = Color(0xFFE7662B) ,
+                color = Color(0xFFE7662B),
                 startAngle = 300f,
                 sweepAngle = sweepAngle ,
                 useCenter = false,
