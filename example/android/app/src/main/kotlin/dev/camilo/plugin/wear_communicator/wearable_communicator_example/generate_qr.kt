@@ -20,8 +20,7 @@ class GenerateQrCode {
                         QrColors(
                                 dark = QrColor.Solid(Color.BLACK),
                                 bitmapBackground = QrColor.Solid(Color.TRANSPARENT),
-                                codeBackground = QrColor
-                                        .Solid(Color.TRANSPARENT),
+                                codeBackground = QrColor.Solid(Color.TRANSPARENT),
                         )
                 )
                 .setElementsShapes(

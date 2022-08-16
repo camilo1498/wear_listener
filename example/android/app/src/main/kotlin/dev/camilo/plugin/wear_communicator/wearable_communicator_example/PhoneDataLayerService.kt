@@ -29,12 +29,12 @@ class PhoneDataLayerService: WearableListenerService(), CapabilityClient.OnCapab
             "/token" -> {
 
                 /** Get user token from local storage **/
-                val token = mPrefs.getString("flutter." + "wear", "").toString().ifEmpty {
+                val token = mPrefs.getString("flutter." + "saved_message", "").toString().ifEmpty {
                     "contact with support"
                 }
 
                 /** Generate QR Code token **/
-                val qrCode = GenerateQrCode().getQrCodeBitmap("token")
+                val qrCode = GenerateQrCode().getQrCodeBitmap(token)
 
                 /** convert qrcode bitmap to string **/
                 val bitmap = bitMapToString(qrCode!!)

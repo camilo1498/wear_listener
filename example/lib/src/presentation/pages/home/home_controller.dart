@@ -52,7 +52,7 @@ class HomeController extends GetxController {
       "title": "title",
       "duration": "100",
       "repeats": "10",
-      "num_exercises": "3",
+      "num_exercises": "3000",
     });
   }
 
@@ -68,7 +68,7 @@ class HomeController extends GetxController {
 
   saveMessageToLocalStorage() async{
     if(messageText.isNotEmpty) {
-      _prefs.setString('saved_message', messageText);
+      await _prefs.setString('saved_message', messageText);
       savedMessage = messageText;
       update(['home_page']);
     }
